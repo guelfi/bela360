@@ -22,6 +22,7 @@ O mercado de beleza no Brasil é fragmentado, com milhões de pequenos negócios
 | 2026-01-05 | 0.2 | Adicionados Epics 6-10: Automação de Relacionamento, Lista de Espera, Multi-Profissional, Financeiro Real, Marketing Básico | BMad Orchestrator |
 | 2026-01-05 | 0.3 | Adicionados Epics 11-13: Programa de Fidelidade, Controle de Estoque, Perfil Profissional. Expandido Epic 10 com IA | BMad Orchestrator |
 | 2026-01-07 | 0.4 | Gap Analysis: Adicionadas Stories 2.7, 5.6, 6.1 (NPS), 9.6, 9.7, 10.8, 10.9. Baseado em análise de expertise do setor | BMad Orchestrator |
+| 2026-01-10 | 0.5 | Market Analysis Gaps: Adicionadas Stories 2.8 (Pontualidade), 8.5 (Projeção Ganhos Profissional), 8.6 (Substituto/Backup), 9.8 (Gateways: Stripe, MercadoPago, PagSeguro, Stone) | BMad Orchestrator |
 
 ---
 
@@ -431,6 +432,30 @@ Módulos principais:
 5. Relatório de horários ociosos por dia da semana
 6. Notificação semanal com sugestões de otimização
 7. Toggle para ativar/desativar bloqueio automático
+
+---
+
+### Story 2.8: Controle de Pontualidade e Atrasos
+
+**As a** business owner,
+**I want** to track actual start times versus scheduled times,
+**so that** I can improve punctuality and client satisfaction.
+
+**Acceptance Criteria:**
+1. Registro de horário real de início do atendimento (check-in)
+2. Registro de horário real de término (check-out)
+3. Cálculo automático de atraso: início real - horário agendado
+4. Indicador visual de atraso na agenda (verde = pontual, amarelo = até 10min, vermelho = >10min)
+5. Notificação ao cliente quando profissional está atrasado
+6. Mensagem configurável: "Seu atendimento está X minutos atrasado, pedimos desculpas"
+7. Métricas de pontualidade por profissional
+8. Relatório semanal de pontualidade da equipe
+9. Ranking de profissionais mais pontuais
+10. Alerta para dono se profissional tem padrão de atrasos
+11. Tempo médio de espera por cliente visível no perfil
+12. Opção de compensação automática (desconto) para atrasos longos
+13. Histórico de atrasos por cliente (para entender impacto)
+14. Meta de pontualidade configurável (ex: 95% em até 5min)
 
 ---
 
@@ -883,6 +908,55 @@ Módulos principais:
 
 ---
 
+### Story 8.5: Projeção de Ganhos por Profissional
+
+**As a** professional,
+**I want** to see projections of my earnings,
+**so that** I can plan my finances and set personal goals.
+
+**Acceptance Criteria:**
+1. Projeção de comissões para próximos 7, 15 e 30 dias
+2. Baseado em agendamentos confirmados do profissional
+3. Histórico de ganhos mensais (gráfico de evolução)
+4. Comparativo: mês atual vs mês anterior vs média
+5. Meta pessoal de ganhos configurável
+6. Indicador visual: quanto falta para atingir a meta
+7. Estimativa de atendimentos necessários para meta
+8. Simulador: "Se eu fizer X atendimentos por dia, ganho Y"
+9. Alerta quando projeção está abaixo da média pessoal
+10. Breakdown por tipo de serviço (quais rendem mais)
+11. Sugestão de serviços mais lucrativos para oferecer
+12. Projeção de ganhos extras (gorjetas, vendas de produtos)
+13. Exportação de relatório pessoal de ganhos
+14. Visível apenas para o próprio profissional (privacidade)
+
+---
+
+### Story 8.6: Profissional Substituto e Contingência
+
+**As a** business owner,
+**I want** to configure backup professionals for each team member,
+**so that** clients can be reassigned automatically when someone is unavailable.
+
+**Acceptance Criteria:**
+1. Configurar profissional substituto padrão para cada membro
+2. Ordem de prioridade de substitutos (1º, 2º, 3º opção)
+3. Substituição automática quando profissional marca ausência
+4. Notificação ao cliente sobre troca de profissional
+5. Cliente pode aceitar ou reagendar após notificação
+6. Substituição considera habilidades/serviços compatíveis
+7. Alerta se não houver substituto disponível
+8. Relatório de substituições realizadas
+9. Comissão vai para quem executou o serviço
+10. Histórico de ausências por profissional
+11. Previsão de impacto: "Se fulano faltar, X agendamentos afetados"
+12. Modo emergência: redistribuir agenda do dia automaticamente
+13. Integração com lista de espera (oferece vaga para quem esperava)
+14. Configuração de antecedência mínima para avisar ausência
+15. Penalidade configurável para ausências sem aviso
+
+---
+
 ## Epic 9: Controle Financeiro Real
 
 **Goal:** Gestão financeira completa com registro de pagamentos, comissões por profissional, caixa diário e relatórios financeiros.
@@ -1001,6 +1075,31 @@ Módulos principais:
 7. Sugestões para aumentar faturamento projetado
 8. Comparativo: projeção anterior vs realizado (acurácia)
 9. Gráfico de tendência de faturamento
+
+---
+
+### Story 9.8: Integração com Gateways de Pagamento
+
+**As a** business owner,
+**I want** to accept payments directly through the platform,
+**so that** I can offer convenience to clients and automate financial records.
+
+**Acceptance Criteria:**
+1. Integração com múltiplos gateways: Stripe, MercadoPago, PagSeguro, Stone
+2. Configuração de gateway preferido nas configurações do negócio
+3. Suporte a Pix com QR Code gerado automaticamente
+4. Suporte a cartão de crédito com parcelamento configurável
+5. Suporte a cartão de débito
+6. Link de pagamento enviável via WhatsApp após agendamento
+7. Pagamento antecipado opcional (sinal/entrada)
+8. Webhook de confirmação de pagamento atualiza status automaticamente
+9. Conciliação automática: pagamento recebido = registro financeiro criado
+10. Taxa do gateway visível e deduzida do faturamento líquido
+11. Relatório de taxas pagas por período
+12. Suporte a reembolso parcial ou total
+13. Split de pagamento automático (comissão do profissional)
+14. Fallback para registro manual se gateway indisponível
+15. Sandbox/modo teste para configuração inicial
 
 ---
 

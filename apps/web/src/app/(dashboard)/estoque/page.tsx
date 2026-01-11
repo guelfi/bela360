@@ -1,56 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Package,
   AlertTriangle,
   TrendingDown,
   Plus,
   Search,
-  Filter,
   ArrowDownRight,
   ArrowUpRight,
   Clock,
   Boxes,
+  RefreshCw,
 } from 'lucide-react';
 import { ExportButton } from '@/components/ExportButton';
 import { exportData, ExportFormat } from '@/lib/export';
-
-interface Product {
-  id: string;
-  name: string;
-  brand: string;
-  sku: string;
-  category: string;
-  currentStock: number;
-  minStock: number;
-  costPrice: number;
-  unit: string;
-  expirationDate?: string;
-}
-
-interface StockStats {
-  totalProducts: number;
-  lowStockCount: number;
-  totalStockValue: number;
-  monthlyPurchases: number;
-  monthlyUsage: number;
-}
-
-interface StockMovement {
-  id: string;
-  type: string;
-  quantity: number;
-  createdAt: string;
-  product: { name: string };
-  user?: { name: string };
-}
+import { inventoryApi, Product, StockMovement, InventoryStats } from '@/lib/api';
 
 export default function EstoquePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [stats, setStats] = useState<StockStats | null>(null);
+  const [stats, setStats] = useState<InventoryStats | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [showNewModal, setShowNewModal] = useState(false);
@@ -60,7 +32,7 @@ export default function EstoquePage() {
     name: '',
     brand: '',
     sku: '',
-    category: 'INTERNAL_USE',
+    category: 'INTERNAL_USE' as 'INTERNAL_USE' | 'FOR_SALE' | 'BOTH',
     costPrice: 0,
     minStock: 0,
     initialStock: 0,
@@ -69,20 +41,44 @@ export default function EstoquePage() {
   const [movementData, setMovementData] = useState({
     type: 'PURCHASE',
     quantity: 0,
+    unitCost: 0,
     notes: '',
   });
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [productsData, statsData, movementsData] = await Promise.all([
+        inventoryApi.getProducts(),
+        inventoryApi.getStats(),
+        inventoryApi.getMovements({ limit: 10 }),
+      ]);
+      setProducts(productsData);
+      setStats(statsData);
+      setMovements(movementsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const handleExport = (format: ExportFormat) => {
     setExporting(true);
     try {
       const data = {
-        headers: ['Nome', 'Marca', 'SKU', 'Categoria', 'Estoque Atual', 'Estoque Mínimo', 'Preço Custo', 'Unidade', 'Status'],
+        headers: ['Nome', 'Marca', 'SKU', 'Categoria', 'Estoque Atual', 'Estoque Minimo', 'Preco Custo', 'Unidade', 'Status'],
         rows: filteredProducts.map(p => [
           p.name,
-          p.brand,
-          p.sku,
+          p.brand || '',
+          p.sku || '',
           categoryLabels[p.category] || p.category,
           p.currentStock,
           p.minStock,
@@ -101,30 +97,6 @@ export default function EstoquePage() {
       setExporting(false);
     }
   };
-
-  useEffect(() => {
-    // Simulated data - replace with API call
-    setStats({
-      totalProducts: 48,
-      lowStockCount: 5,
-      totalStockValue: 8750.00,
-      monthlyPurchases: 2350.00,
-      monthlyUsage: 1890.00,
-    });
-    setProducts([
-      { id: '1', name: 'Shampoo Profissional 1L', brand: 'LOreal', sku: 'SH001', category: 'INTERNAL_USE', currentStock: 8, minStock: 5, costPrice: 45.00, unit: 'un' },
-      { id: '2', name: 'Condicionador 500ml', brand: 'LOreal', sku: 'CD001', category: 'INTERNAL_USE', currentStock: 3, minStock: 5, costPrice: 35.00, unit: 'un' },
-      { id: '3', name: 'Tintura 60g', brand: 'Wella', sku: 'TN001', category: 'INTERNAL_USE', currentStock: 25, minStock: 10, costPrice: 28.00, unit: 'un' },
-      { id: '4', name: 'Oxidante 20 Vol 1L', brand: 'Wella', sku: 'OX001', category: 'INTERNAL_USE', currentStock: 4, minStock: 6, costPrice: 22.00, unit: 'un' },
-      { id: '5', name: 'Mascara Hidratacao 500g', brand: 'Kerastase', sku: 'MH001', category: 'FOR_SALE', currentStock: 12, minStock: 5, costPrice: 85.00, unit: 'un' },
-    ]);
-    setMovements([
-      { id: '1', type: 'SERVICE_USE', quantity: -2, createdAt: '2026-01-05T14:30:00', product: { name: 'Shampoo Profissional' }, user: { name: 'Ana' } },
-      { id: '2', type: 'PURCHASE', quantity: 10, createdAt: '2026-01-05T09:00:00', product: { name: 'Tintura 60g' }, user: { name: 'Admin' } },
-      { id: '3', type: 'SERVICE_USE', quantity: -1, createdAt: '2026-01-04T16:45:00', product: { name: 'Oxidante 20 Vol' }, user: { name: 'Maria' } },
-    ]);
-    setLoading(false);
-  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -146,6 +118,7 @@ export default function EstoquePage() {
     ADJUSTMENT: 'Ajuste',
     LOSS: 'Perda',
     RETURN: 'Devolucao',
+    EXPIRED: 'Vencido',
   };
 
   const isLowStock = (product: Product) => product.currentStock <= product.minStock;
@@ -155,11 +128,12 @@ export default function EstoquePage() {
     setShowMovementModal(false);
     setSelectedProduct(null);
     setFormData({ name: '', brand: '', sku: '', category: 'INTERNAL_USE', costPrice: 0, minStock: 0, initialStock: 0, unit: 'un' });
-    setMovementData({ type: 'PURCHASE', quantity: 0, notes: '' });
+    setMovementData({ type: 'PURCHASE', quantity: 0, unitCost: 0, notes: '' });
   };
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
+    setMovementData(prev => ({ ...prev, unitCost: product.costPrice }));
     setShowMovementModal(true);
   };
 
@@ -171,26 +145,24 @@ export default function EstoquePage() {
     }
 
     setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      name: formData.name,
-      brand: formData.brand,
-      sku: formData.sku || `SKU${Date.now().toString(36).toUpperCase()}`,
-      category: formData.category,
-      currentStock: formData.initialStock,
-      minStock: formData.minStock,
-      costPrice: formData.costPrice,
-      unit: formData.unit,
-    };
-
-    setProducts(prev => [...prev, newProduct]);
-    if (stats) {
-      setStats({ ...stats, totalProducts: stats.totalProducts + 1 });
+    try {
+      await inventoryApi.createProduct({
+        name: formData.name,
+        brand: formData.brand || undefined,
+        sku: formData.sku || undefined,
+        category: formData.category,
+        costPrice: formData.costPrice,
+        minStock: formData.minStock,
+        unit: formData.unit,
+        initialStock: formData.initialStock,
+      });
+      handleCloseModals();
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao criar produto');
+    } finally {
+      setSaving(false);
     }
-    handleCloseModals();
-    setSaving(false);
   };
 
   const handleSubmitMovement = async (e: React.FormEvent) => {
@@ -201,40 +173,26 @@ export default function EstoquePage() {
     }
 
     setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const isIncoming = ['PURCHASE', 'RETURN', 'ADJUSTMENT'].includes(movementData.type) && movementData.quantity > 0;
-    const quantityChange = isIncoming ? Math.abs(movementData.quantity) : -Math.abs(movementData.quantity);
-    const newStock = selectedProduct.currentStock + quantityChange;
-
-    if (newStock < 0) {
-      alert('Estoque insuficiente');
+    try {
+      await inventoryApi.createMovement(selectedProduct.id, {
+        type: movementData.type,
+        quantity: movementData.quantity,
+        unitCost: movementData.unitCost || undefined,
+        notes: movementData.notes || undefined,
+      });
+      handleCloseModals();
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao registrar movimentacao');
+    } finally {
       setSaving(false);
-      return;
     }
-
-    setProducts(prev => prev.map(p =>
-      p.id === selectedProduct.id ? { ...p, currentStock: newStock } : p
-    ));
-
-    const newMovement: StockMovement = {
-      id: Date.now().toString(),
-      type: movementData.type,
-      quantity: quantityChange,
-      createdAt: new Date().toISOString(),
-      product: { name: selectedProduct.name },
-      user: { name: 'Usuario' },
-    };
-    setMovements(prev => [newMovement, ...prev]);
-
-    handleCloseModals();
-    setSaving(false);
   };
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase());
+      (p.brand?.toLowerCase().includes(search.toLowerCase())) ||
+      (p.sku?.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter = filter === 'all' ||
       (filter === 'low' && isLowStock(p)) ||
       (filter === p.category);
@@ -245,6 +203,18 @@ export default function EstoquePage() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-red-500">{error}</p>
+        <button onClick={loadData} className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+          <RefreshCw className="h-4 w-4" />
+          Tentar novamente
+        </button>
       </div>
     );
   }
@@ -263,6 +233,9 @@ export default function EstoquePage() {
         </div>
 
         <div className="flex gap-2">
+          <button onClick={loadData} className="p-2 border rounded-lg hover:bg-muted" title="Atualizar">
+            <RefreshCw className="h-4 w-4" />
+          </button>
           <ExportButton onExport={handleExport} loading={exporting} />
           <button
             onClick={() => setShowNewModal(true)}
@@ -281,7 +254,7 @@ export default function EstoquePage() {
             <p className="text-sm text-muted-foreground">Total Produtos</p>
             <Boxes className="h-4 w-4 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold">{stats?.totalProducts}</p>
+          <p className="text-2xl font-bold">{stats?.totalProducts || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">itens cadastrados</p>
         </div>
 
@@ -290,7 +263,7 @@ export default function EstoquePage() {
             <p className="text-sm text-muted-foreground">Estoque Baixo</p>
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </div>
-          <p className="text-2xl font-bold text-red-500">{stats?.lowStockCount}</p>
+          <p className="text-2xl font-bold text-red-500">{stats?.lowStockCount || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">precisam reposicao</p>
         </div>
 
@@ -339,7 +312,7 @@ export default function EstoquePage() {
         {/* Products List */}
         <div className="lg:col-span-2 bg-card rounded-lg border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Produtos</h2>
+            <h2 className="text-lg font-semibold">Produtos ({filteredProducts.length})</h2>
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -364,37 +337,52 @@ export default function EstoquePage() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                onClick={() => handleProductClick(product)}
-                className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors hover:opacity-80 ${
-                  isLowStock(product) ? 'bg-red-50 border border-red-200' : 'bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${isLowStock(product) ? 'bg-red-100' : 'bg-blue-100'}`}>
-                    <Package className={`h-5 w-5 ${isLowStock(product) ? 'text-red-600' : 'text-blue-600'}`} />
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum produto encontrado</p>
+              {products.length === 0 && (
+                <button
+                  onClick={() => setShowNewModal(true)}
+                  className="mt-4 text-primary hover:underline"
+                >
+                  Cadastrar primeiro produto
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  onClick={() => handleProductClick(product)}
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors hover:opacity-80 ${
+                    isLowStock(product) ? 'bg-red-50 border border-red-200' : 'bg-muted/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${isLowStock(product) ? 'bg-red-100' : 'bg-blue-100'}`}>
+                      <Package className={`h-5 w-5 ${isLowStock(product) ? 'text-red-600' : 'text-blue-600'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {product.brand || 'Sem marca'} - {product.sku || 'Sem SKU'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {product.brand} - {product.sku}
+                  <div className="text-right">
+                    <p className={`font-bold ${isLowStock(product) ? 'text-red-600' : ''}`}>
+                      {product.currentStock} {product.unit}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Min: {product.minStock} | {formatCurrency(product.costPrice)}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold ${isLowStock(product) ? 'text-red-600' : ''}`}>
-                    {product.currentStock} {product.unit}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Min: {product.minStock} | {formatCurrency(product.costPrice)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Movements */}
@@ -403,32 +391,35 @@ export default function EstoquePage() {
             <Clock className="h-5 w-5" />
             Movimentacoes Recentes
           </h2>
-          <div className="space-y-3">
-            {movements.map((movement) => (
-              <div key={movement.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className={`p-2 rounded-lg ${movement.quantity > 0 ? 'bg-green-100' : 'bg-orange-100'}`}>
-                  {movement.quantity > 0 ? (
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4 text-orange-600" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{movement.product.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {movementTypeLabels[movement.type]} por {movement.user?.name}
+          {movements.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Nenhuma movimentacao</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {movements.map((movement) => (
+                <div key={movement.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <div className={`p-2 rounded-lg ${movement.quantity > 0 ? 'bg-green-100' : 'bg-orange-100'}`}>
+                    {movement.quantity > 0 ? (
+                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <ArrowDownRight className="h-4 w-4 text-orange-600" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{movement.product?.name || 'Produto'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {movementTypeLabels[movement.type] || movement.type} {movement.user?.name ? `por ${movement.user.name}` : ''}
+                    </p>
+                  </div>
+                  <p className={`font-bold text-sm ${movement.quantity > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                    {movement.quantity > 0 ? '+' : ''}{movement.quantity}
                   </p>
                 </div>
-                <p className={`font-bold text-sm ${movement.quantity > 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                  {movement.quantity > 0 ? '+' : ''}{movement.quantity}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <button className="w-full mt-4 p-2 text-sm text-primary hover:bg-muted rounded-lg transition-colors">
-            Ver todas movimentacoes
-          </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -475,7 +466,7 @@ export default function EstoquePage() {
                 <label className="block text-sm font-medium mb-1">Categoria</label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value as 'INTERNAL_USE' | 'FOR_SALE' | 'BOTH' }))}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
                   <option value="INTERNAL_USE">Uso Interno</option>
@@ -599,6 +590,7 @@ export default function EstoquePage() {
                   <option value="ADJUSTMENT">Ajuste</option>
                   <option value="LOSS">Perda (Saida)</option>
                   <option value="RETURN">Devolucao (Entrada)</option>
+                  <option value="EXPIRED">Vencido (Saida)</option>
                 </select>
               </div>
               <div>
@@ -618,6 +610,20 @@ export default function EstoquePage() {
                     : 'Quantidade a remover do estoque'}
                 </p>
               </div>
+              {movementData.type === 'PURCHASE' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Custo Unitario (R$)</label>
+                  <input
+                    type="number"
+                    value={movementData.unitCost || ''}
+                    onChange={(e) => setMovementData(prev => ({ ...prev, unitCost: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-1">Observacoes</label>
                 <textarea
