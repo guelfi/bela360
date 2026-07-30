@@ -1,0 +1,92 @@
+name: CD - Deploy to OCI
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Digite YES para confirmar o deploy na OCI'
+        required: true
+        default: ''
+  workflow_run:
+    workflows: ["CI - Build & Validate"]
+    types:
+      - completed
+
+concurrency:
+  group: deploy-oci-bela360
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate deploy inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch and confirmation
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+              echo "::error::Deploy permitido apenas a partir do branch 'main'. Branch atual: ${GITHUB_REF}"
+              exit 1
+            fi
+
+            CONFIRM_RAW="${{ github.event.inputs.confirm_deploy }}"
+            CONFIRM_CLEAN="$(echo "$CONFIRM_RAW" | tr -d '\r\n\t ' | tr '[:lower:]' '[:upper:]')"
+            if [ "$CONFIRM_CLEAN" != "YES" ]; then
+              echo "::error::Para executar o deploy, preencha confirm_deploy exatamente com YES."
+              exit 1
+            fi
+          fi
+
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+              echo "::error::Deploy automático bloqueado: CI não está verde (conclusion=${{ github.event.workflow_run.conclusion }})."
+              exit 1
+            fi
+
+            if [ "${{ github.event.workflow_run.head_branch }}" != "main" ]; then
+              echo "::error::Deploy automático bloqueado: apenas push em 'main' dispara deploy (branch=${{ github.event.workflow_run.head_branch }})."
+              exit 1
+            fi
+          fi
+
+  deploy:
+    name: Deploy to Oracle Cloud
+    runs-on: ubuntu-latest
+    needs: validate
+    environment: production
+
+    steps:
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+
+      - name: Add OCI host to known_hosts
+        run: ssh-keyscan -H ${{ secrets.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to OCI server
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} 'bash -s' << 'EOF'
+            set -e
+            cd /var/www/bela360
+            git fetch origin
+            git reset --hard origin/main
+            sudo docker compose -f docker-compose.oci.yml up -d --build
+            sudo docker network connect bela360_bela360-network nginx-proxy 2>/dev/null || true
+          EOF
+
+      - name: Verify deployment
+        env:
+          OCI_HOST: ${{ secrets.OCI_HOST }}
+          OCI_USER: ${{ secrets.OCI_USER }}
+        run: |
+          echo "Waiting for containers to stabilize..."
+          sleep 20
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "sudo docker ps --filter name=bela360 --format 'table {{.Names}}\t{{.Status}}'"
+          echo "=== Web health ==="
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "curl -s -o /dev/null -w 'HTTP %{http_code}\n' http://localhost/bela360/"
+          echo "=== Deployed commit (server) ==="
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "cd /var/www/bela360 && git log -1 --oneline"
