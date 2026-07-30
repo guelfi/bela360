@@ -111,7 +111,6 @@ services:
       target: production
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-        - NEXT_BASE_PATH=/bela360
     container_name: bela360-web
     restart: always
     environment:

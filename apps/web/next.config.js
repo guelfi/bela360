@@ -1,11 +1,8 @@
-const basePath = process.env.NEXT_BASE_PATH || '';
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   transpilePackages: ['@bela360/shared'],
-  ...(basePath ? { basePath, assetPrefix: basePath } : {}),
 
   // Disable x-powered-by header
   poweredByHeader: false,
