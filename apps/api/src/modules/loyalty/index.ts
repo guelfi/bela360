@@ -34,24 +34,41 @@ router.post('/program', async (req: Request, res: Response) => {
     const businessId = req.user!.businessId;
     const data = req.body;
 
+    // Allowlist explicito nos dois ramos - "update: data" com o corpo cru
+    // permitiria sobrescrever campos como businessId.
+    const fields = {
+      isActive: data.isActive,
+      pointsPerReal: data.pointsPerReal,
+      useCashback: data.useCashback,
+      cashbackPercent: data.cashbackPercent,
+      silverThreshold: data.silverThreshold,
+      goldThreshold: data.goldThreshold,
+      diamondThreshold: data.diamondThreshold,
+      bronzeDiscount: data.bronzeDiscount,
+      silverDiscount: data.silverDiscount,
+      goldDiscount: data.goldDiscount,
+      diamondDiscount: data.diamondDiscount,
+      pointsExpirationMonths: data.pointsExpirationMonths,
+    };
+
     const program = await prisma.loyaltyProgram.upsert({
       where: { businessId },
       create: {
         businessId,
-        isActive: data.isActive ?? true,
-        pointsPerReal: data.pointsPerReal ?? 1,
-        useCashback: data.useCashback ?? false,
-        cashbackPercent: data.cashbackPercent ?? 5,
-        silverThreshold: data.silverThreshold ?? 100,
-        goldThreshold: data.goldThreshold ?? 500,
-        diamondThreshold: data.diamondThreshold ?? 1000,
-        bronzeDiscount: data.bronzeDiscount ?? 0,
-        silverDiscount: data.silverDiscount ?? 5,
-        goldDiscount: data.goldDiscount ?? 10,
-        diamondDiscount: data.diamondDiscount ?? 15,
-        pointsExpirationMonths: data.pointsExpirationMonths ?? 12,
+        isActive: fields.isActive ?? true,
+        pointsPerReal: fields.pointsPerReal ?? 1,
+        useCashback: fields.useCashback ?? false,
+        cashbackPercent: fields.cashbackPercent ?? 5,
+        silverThreshold: fields.silverThreshold ?? 100,
+        goldThreshold: fields.goldThreshold ?? 500,
+        diamondThreshold: fields.diamondThreshold ?? 1000,
+        bronzeDiscount: fields.bronzeDiscount ?? 0,
+        silverDiscount: fields.silverDiscount ?? 5,
+        goldDiscount: fields.goldDiscount ?? 10,
+        diamondDiscount: fields.diamondDiscount ?? 15,
+        pointsExpirationMonths: fields.pointsExpirationMonths ?? 12,
       },
-      update: data,
+      update: fields,
     });
 
     res.json(program);
@@ -66,8 +83,13 @@ router.get('/clients/:clientId/points', async (req: Request, res: Response) => {
     const businessId = req.user!.businessId;
     const { clientId } = req.params;
 
-    let points = await prisma.loyaltyPoints.findUnique({
-      where: { clientId },
+    const client = await prisma.client.findFirst({ where: { id: clientId, businessId } });
+    if (!client) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
+    let points = await prisma.loyaltyPoints.findFirst({
+      where: { clientId, businessId },
       include: {
         transactions: {
           orderBy: { createdAt: 'desc' },
@@ -100,6 +122,11 @@ router.post('/clients/:clientId/points/add', async (req: Request, res: Response)
     const { clientId } = req.params;
     const { amount, appointmentId, description } = req.body;
 
+    const client = await prisma.client.findFirst({ where: { id: clientId, businessId } });
+    if (!client) {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+
     const program = await prisma.loyaltyProgram.findUnique({
       where: { businessId },
     });
@@ -110,8 +137,8 @@ router.post('/clients/:clientId/points/add', async (req: Request, res: Response)
 
     const pointsToAdd = Math.floor(amount * Number(program.pointsPerReal));
 
-    let loyaltyPoints = await prisma.loyaltyPoints.findUnique({
-      where: { clientId },
+    let loyaltyPoints = await prisma.loyaltyPoints.findFirst({
+      where: { clientId, businessId },
     });
 
     if (!loyaltyPoints) {
@@ -218,18 +245,19 @@ router.post('/rewards', async (req: Request, res: Response) => {
 // Redeem reward
 router.post('/clients/:clientId/redeem/:rewardId', async (req: Request, res: Response) => {
   try {
+    const businessId = req.user!.businessId;
     const { clientId, rewardId } = req.params;
 
-    const loyaltyPoints = await prisma.loyaltyPoints.findUnique({
-      where: { clientId },
+    const loyaltyPoints = await prisma.loyaltyPoints.findFirst({
+      where: { clientId, businessId },
     });
 
     if (!loyaltyPoints) {
       return res.status(404).json({ error: 'Pontos não encontrados' });
     }
 
-    const reward = await prisma.loyaltyReward.findUnique({
-      where: { id: rewardId },
+    const reward = await prisma.loyaltyReward.findFirst({
+      where: { id: rewardId, program: { businessId } },
     });
 
     if (!reward || !reward.isActive) {
