@@ -67,6 +67,16 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/85 to-pink-700/80" />
 
       <div className="w-full max-w-md relative z-10">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-purple-100 hover:text-white text-sm font-medium mb-6"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Voltar para o inicio
+        </Link>
+
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <h1 className="text-4xl font-bold text-white mb-2">bela360</h1>
