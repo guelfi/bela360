@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { businessApi } from '@/lib/api';
 
+const BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1626383137804-ff908d2753a2?auto=format&fit=crop&w=1600&q=80';
+
 const BUSINESS_TYPES = [
   { value: 'SALON', label: 'Salao de beleza' },
   { value: 'BARBERSHOP', label: 'Barbearia' },
@@ -59,8 +62,13 @@ export default function OnboardingPage() {
 
   if (done) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
+      <main
+        className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center relative"
+        style={{ backgroundImage: `url('${BACKGROUND_IMAGE}')` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/85 to-pink-700/80" />
+
+        <div className="w-full max-w-md text-center relative z-10">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">Negocio cadastrado!</h2>
             <p className="text-gray-600 mb-6">
@@ -80,10 +88,27 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <main
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center relative"
+      style={{ backgroundImage: `url('${BACKGROUND_IMAGE}')` }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/85 to-pink-700/80" />
+
+      <div className="w-full max-w-md relative z-10">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-purple-100 hover:text-white text-sm font-medium mb-6"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Voltar para o inicio
+        </Link>
+
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">bela360</h1>
+          <Link href="/" className="inline-block">
+            <h1 className="text-4xl font-bold text-white mb-2">bela360</h1>
+          </Link>
           <p className="text-purple-100">Cadastre seu negocio</p>
         </div>
 
