@@ -42,42 +42,6 @@ services:
     networks:
       - bela360-network
 
-  evolution-api:
-    image: evoapicloud/evolution-api:v2.3.7
-    container_name: bela360-evolution
-    restart: always
-    environment:
-      - SERVER_URL=${EVOLUTION_PUBLIC_URL}
-      - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=evolution
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://redis:6379
-      - CACHE_REDIS_PREFIX_KEY=evolution
-      - CACHE_LOCAL_ENABLED=false
-      - WEBSOCKET_ENABLED=true
-      - LOG_LEVEL=ERROR,WARN
-      - WEBHOOK_GLOBAL_URL=http://bela360-api:3001/api/webhooks/whatsapp
-      - WEBHOOK_GLOBAL_ENABLED=true
-    volumes:
-      - evolution_instances:/evolution/instances
-      - evolution_store:/evolution/store
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-    networks:
-      - bela360-network
-
   api:
     build:
       context: .
@@ -92,7 +56,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_URL=http://batuara-evolution-api:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME}
       - FRONTEND_URL=${FRONTEND_URL}
@@ -103,6 +67,7 @@ services:
         condition: service_healthy
     networks:
       - bela360-network
+      - evolution-shared
 
   web:
     build:
@@ -124,9 +89,10 @@ services:
 networks:
   bela360-network:
     driver: bridge
+  evolution-shared:
+    external: true
+    name: docker_evolution-network
 
 volumes:
   postgres_data:
   redis_data:
-  evolution_instances:
-  evolution_store:
