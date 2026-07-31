@@ -41,14 +41,14 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg border transition-colors ${
                   isActive
-                    ? 'bg-purple-50 text-purple-600'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-primary/10 text-primary border-primary/40'
+                    : 'text-gray-700 border-transparent hover:bg-gray-50'
                 }`}
               >
                 <svg
-                  className={`w-5 h-5 mr-3 ${isActive ? 'text-purple-600' : 'text-gray-400'}`}
+                  className={`w-5 h-5 mr-3 ${isActive ? 'text-primary' : 'text-gray-400'}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
