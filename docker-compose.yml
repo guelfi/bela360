@@ -101,7 +101,11 @@ services:
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-bela360_evolution_key}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-bela360}
       - FRONTEND_URL=http://localhost:3000
-      - CORS_ALLOWED_ORIGINS=http://localhost,http://192.168.15.119
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://192.168.15.119,http://127.0.0.1:8091
+      # Rate limit generoso para dev local e a suite de E2E (que dispara
+      # varias dezenas de requests em paralelo em poucos segundos) - o
+      # limite de producao (100/min, docker-compose.oci.yml) nao muda.
+      - RATE_LIMIT_MAX_REQUESTS=2000
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages

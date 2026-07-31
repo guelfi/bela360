@@ -1,0 +1,19 @@
+# Override usado so pelo job de E2E do CI (e opcionalmente para rodar os
+# specs de navegador localmente antes de commitar). Adiciona um nginx
+# minimo replicando o roteamento de subpath de producao, que o
+# docker-compose.yml base nao tem (nao precisa dele para dev local via
+# nginx-local). Uso: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+services:
+  nginx-e2e:
+    image: nginx:1.27-alpine
+    container_name: bela360-nginx-e2e
+    restart: unless-stopped
+    volumes:
+      - ./docker/nginx/nginx.e2e.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - '8091:80'
+    depends_on:
+      - web
+      - api
+    networks:
+      - bela360-network

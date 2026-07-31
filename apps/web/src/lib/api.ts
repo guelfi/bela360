@@ -872,6 +872,8 @@ export const appointmentsApi = {
 
   getUpcoming: (clientId: string) =>
     api.get<Appointment[]>(`/appointments/client/${clientId}/upcoming`),
+
+  getToday: () => api.get<Appointment[]>('/appointments/today'),
 };
 
 // ============================================

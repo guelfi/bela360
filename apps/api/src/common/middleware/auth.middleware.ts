@@ -57,13 +57,15 @@ export function authMiddleware(
 
     next();
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(new AuthenticationError('Token inválido'));
+    // TokenExpiredError extends JsonWebTokenError, entao precisa ser
+    // checado primeiro - senao todo token expirado cai no branch generico.
+    if (error instanceof jwt.TokenExpiredError) {
+      next(new AuthenticationError('Token expirado'));
       return;
     }
 
-    if (error instanceof jwt.TokenExpiredError) {
-      next(new AuthenticationError('Token expirado'));
+    if (error instanceof jwt.JsonWebTokenError) {
+      next(new AuthenticationError('Token inválido'));
       return;
     }
 

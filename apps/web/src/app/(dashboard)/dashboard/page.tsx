@@ -19,6 +19,8 @@ import {
 } from 'recharts';
 import {
   analyticsApi,
+  appointmentsApi,
+  Appointment,
   DashboardStats,
   RevenueReport,
   ServiceReport,
@@ -35,24 +37,6 @@ import {
   prepareAppointmentExport,
 } from '@/lib/export';
 
-interface TodayAppointment {
-  id: string;
-  clientId: string;
-  client: {
-    name: string;
-    phone: string;
-  };
-  serviceId: string;
-  service: {
-    name: string;
-  };
-  professionalId: string;
-  professional: {
-    name: string;
-  };
-  startTime: string;
-  status: string;
-}
 
 const CHART_COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 
@@ -169,7 +153,7 @@ export default function DashboardPage() {
   const [revenueData, setRevenueData] = useState<RevenueReport | null>(null);
   const [serviceData, setServiceData] = useState<ServiceReport[] | null>(null);
   const [professionalData, setProfessionalData] = useState<ProfessionalReport[] | null>(null);
-  const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
+  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -196,10 +180,7 @@ export default function DashboardPage() {
           analyticsApi.getRevenueReport(startDate, endDate).catch(() => null),
           analyticsApi.getServiceReport(monthStart, endDate).catch(() => null),
           analyticsApi.getProfessionalReport(monthStart, endDate).catch(() => null),
-          fetch('/api/appointments/today', { credentials: 'include' })
-            .then(res => res.json())
-            .then(json => json.data || [])
-            .catch(() => []),
+          appointmentsApi.getToday().catch(() => []),
         ]);
 
         setStats(dashboardStats);
@@ -343,7 +324,15 @@ export default function DashboardPage() {
 
   const handleExportAppointments = (format: ExportFormat) => {
     if (!todayAppointments.length) return;
-    const data = prepareAppointmentExport(todayAppointments);
+    const data = prepareAppointmentExport(
+      todayAppointments.map(appointment => ({
+        client: { name: appointment.client?.name || 'Cliente' },
+        service: { name: appointment.service?.name || 'Serviço' },
+        professional: { name: appointment.professional?.name || 'Profissional' },
+        startTime: appointment.startTime,
+        status: appointment.status,
+      }))
+    );
     exportData(data, format, {
       filename: `agendamentos-hoje-${new Date().toISOString().split('T')[0]}`,
       title: 'Agendamentos de Hoje',
