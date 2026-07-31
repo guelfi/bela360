@@ -56,7 +56,7 @@ test('full browser journey: login, reach dashboard, logout, dashboard blocked ag
   });
   expect(onboardingRes.status()).toBe(201);
 
-  await page.goto(WEB_URL);
+  await page.goto(`${WEB_URL}/login`);
   await page.getByPlaceholder('(11) 99999-9999').fill(ownerPhone);
   await page.getByRole('button', { name: 'Enviar codigo' }).click();
 
@@ -70,9 +70,9 @@ test('full browser journey: login, reach dashboard, logout, dashboard blocked ag
   await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sair' }).click();
-  await expect(page).toHaveURL(WEB_URL);
+  await expect(page).toHaveURL(`${WEB_URL}/login`);
 
   // sem sessao, tentar acessar o dashboard direto deve voltar pro login
   await page.goto(`${WEB_URL}/dashboard`);
-  await expect(page).toHaveURL(WEB_URL);
+  await expect(page).toHaveURL(`${WEB_URL}/login`);
 });
