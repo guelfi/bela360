@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authApi } from '@/lib/api';
 
 export default function LoginPage() {
@@ -147,9 +148,9 @@ export default function LoginPage() {
 
         <p className="text-center text-purple-100 text-sm mt-8">
           Novo por aqui?{' '}
-          <a href="/onboarding" className="text-white font-medium hover:underline">
+          <Link href="/onboarding" className="text-white font-medium hover:underline">
             Cadastre seu negocio
-          </a>
+          </Link>
         </p>
       </div>
     </main>

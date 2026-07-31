@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { authApi } from '@/lib/api';
 
 export default function ProfessionalLoginPage() {
@@ -155,9 +156,9 @@ export default function ProfessionalLoginPage() {
         <div className="text-center mt-8 space-y-4">
           <p className="text-indigo-100 text-sm">
             E dono do negocio?{' '}
-            <a href="/" className="text-white font-medium hover:underline">
+            <Link href="/" className="text-white font-medium hover:underline">
               Acesse aqui
-            </a>
+            </Link>
           </p>
           <p className="text-indigo-200/60 text-xs">
             Seu acesso deve ser criado pelo administrador do salao
