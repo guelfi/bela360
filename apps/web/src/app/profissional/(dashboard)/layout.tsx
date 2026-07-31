@@ -14,6 +14,7 @@ import {
   Star,
   Clock,
 } from 'lucide-react';
+import { authApi } from '@/lib/api';
 
 interface UserInfo {
   user: {
@@ -46,37 +47,25 @@ export default function ProfessionalLayout({
   const [user, setUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
-    // Check authentication
-    const token = localStorage.getItem('accessToken');
-    const role = localStorage.getItem('userRole');
-
-    if (!token || role !== 'PROFESSIONAL') {
-      router.push('/profissional');
-      return;
-    }
-
-    // Get user info
-    fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Unauthorized');
-        return res.json();
+    authApi
+      .me()
+      .then((data) => {
+        if (data.user.role !== 'PROFESSIONAL') {
+          throw new Error('not a professional');
+        }
+        setUser(data);
       })
-      .then((data) => setUser(data.data))
       .catch(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('userRole');
         router.push('/profissional');
       });
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    router.push('/profissional');
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      router.push('/profissional');
+    }
   };
 
   return (

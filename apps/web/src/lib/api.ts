@@ -194,22 +194,21 @@ export interface Business {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
   user: User;
   business: Business;
 }
 
 export const authApi = {
   requestOTP: (phone: string) =>
-    api.post<{ message: string; expiresIn: number }>('/auth/request-otp', { phone }),
+    api.post<{ message: string; expiresIn: number }>('/auth/otp/request', { phone }),
 
   verifyOTP: (phone: string, otp: string) =>
-    api.post<AuthResponse>('/auth/verify', { phone, otp }),
+    api.post<AuthResponse>('/auth/otp/verify', { phone, otp }),
 
-  refreshToken: (refreshToken: string) =>
-    api.post<{ accessToken: string; refreshToken: string; expiresIn: number }>('/auth/refresh', { refreshToken }),
+  // O accessToken/refreshToken agora vivem em cookies httpOnly; o refresh
+  // usa o cookie automaticamente (envio via credentials: 'include'), sem
+  // precisar de nenhum token no corpo.
+  refreshToken: () => api.post<{ expiresIn: number }>('/auth/refresh'),
 
   logout: () => api.post<{ message: string }>('/auth/logout'),
 

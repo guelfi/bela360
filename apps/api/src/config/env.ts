@@ -25,6 +25,10 @@ const envSchema = z.object({
   // URLs
   FRONTEND_URL: z.string().url().default('http://localhost:3000'),
   API_URL: z.string().url().default('http://localhost:3001'),
+  // Origens extras aceitas por CORS/CSRF alem de FRONTEND_URL, separadas por
+  // virgula - usado em dev local onde o mesmo app e acessado por mais de um
+  // host (ex: via proxy nginx local em vez da porta direta do Next.js).
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
 
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
@@ -49,3 +53,8 @@ function loadEnv(): Env {
 }
 
 export const env = loadEnv();
+
+export const allowedOrigins: string[] = [
+  env.FRONTEND_URL,
+  ...(env.CORS_ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) ?? []),
+];

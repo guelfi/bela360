@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,17 +25,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/otp/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.replace(/\D/g, '') }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Erro ao enviar codigo');
-      }
-
+      await authApi.requestOTP(phone.replace(/\D/g, ''));
       setStep('otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao enviar codigo');
@@ -49,27 +40,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phone.replace(/\D/g, ''),
-          otp,
-        }),
-      });
+      const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Codigo invalido');
-      }
-
-      const data = await res.json();
-      localStorage.setItem('accessToken', data.data.accessToken);
-      localStorage.setItem('refreshToken', data.data.refreshToken);
-      localStorage.setItem('userRole', data.data.user.role);
-
-      // Redirect based on role
-      if (data.data.user.role === 'PROFESSIONAL') {
+      // Redirect based on role (o token ja foi setado como cookie httpOnly pela API)
+      if (data.user.role === 'PROFESSIONAL') {
         router.push('/profissional/meu-painel');
       } else {
         router.push('/dashboard');

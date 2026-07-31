@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
-import { env, logger } from './config';
+import { env, allowedOrigins, logger } from './config';
 import { errorHandler } from './common/middleware';
 import { whatsappRoutes } from './modules/whatsapp';
 import { authRoutes } from './modules/auth';
@@ -34,7 +34,7 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -53,7 +53,7 @@ app.use((req: Request, res: Response, next) => {
   const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
   const origin = req.headers.origin;
 
-  if (isMutation && origin && origin !== env.FRONTEND_URL) {
+  if (isMutation && origin && !allowedOrigins.includes(origin)) {
     res.status(403).json({
       success: false,
       error: { code: 'INVALID_ORIGIN', message: 'Origem não permitida' },

@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { authApi, User } from '@/lib/api';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -26,6 +28,23 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    authApi
+      .me()
+      .then((data) => setUser(data.user))
+      .catch(() => router.push('/'));
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } finally {
+      router.push('/');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,9 +87,12 @@ export default function DashboardLayout({
           <h2 className="text-lg font-semibold text-gray-800">
             {navigation.find((item) => pathname.startsWith(item.href))?.name || 'Dashboard'}
           </h2>
-          <button className="flex items-center text-sm text-gray-600 hover:text-gray-800">
+          <button
+            onClick={handleLogout}
+            className="flex items-center text-sm text-gray-600 hover:text-gray-800"
+          >
             <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-medium mr-2">
-              U
+              {user?.name?.[0]?.toUpperCase() || 'U'}
             </span>
             Sair
           </button>

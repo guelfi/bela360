@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api';
 
 export default function ProfessionalLoginPage() {
   const router = useRouter();
@@ -24,17 +25,7 @@ export default function ProfessionalLoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/otp/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.replace(/\D/g, '') }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Erro ao enviar codigo');
-      }
-
+      await authApi.requestOTP(phone.replace(/\D/g, ''));
       setStep('otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao enviar codigo');
@@ -49,30 +40,15 @@ export default function ProfessionalLoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phone.replace(/\D/g, ''),
-          otp,
-        }),
-      });
+      const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Codigo invalido');
-      }
-
-      const data = await res.json();
-
-      // Check if user is a professional
-      if (data.data.user.role !== 'PROFESSIONAL') {
+      if (data.user.role !== 'PROFESSIONAL') {
+        // Cookie ja foi setado pela API para esse usuario, mas ele nao e
+        // profissional - desfaz a sessao antes de recusar o acesso.
+        await authApi.logout();
         throw new Error('Esta area e exclusiva para profissionais');
       }
 
-      localStorage.setItem('accessToken', data.data.accessToken);
-      localStorage.setItem('refreshToken', data.data.refreshToken);
-      localStorage.setItem('userRole', data.data.user.role);
       router.push('/profissional/meu-painel');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Codigo invalido');

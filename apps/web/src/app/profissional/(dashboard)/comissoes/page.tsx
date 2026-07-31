@@ -62,18 +62,15 @@ export default function ProfessionalComissoesPage() {
       setError('');
 
       try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) return;
-
         const { startDate, endDate } = getDateRange();
 
-        // Fetch summary and entries in parallel
+        // Fetch summary and entries in parallel (cookie httpOnly enviado automaticamente)
         const [summaryRes, entriesRes] = await Promise.all([
           fetch(`/api/finance/my/commissions?startDate=${startDate}&endDate=${endDate}`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
           }),
           fetch(`/api/finance/my/commission-entries?startDate=${startDate}&endDate=${endDate}`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
           }),
         ]);
 

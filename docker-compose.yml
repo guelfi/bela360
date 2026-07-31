@@ -101,6 +101,7 @@ services:
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-bela360_evolution_key}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-bela360}
       - FRONTEND_URL=http://localhost:3000
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://192.168.15.119
     volumes:
       - ./apps/api:/app/apps/api
       - ./packages:/app/packages
