@@ -1,18 +1,26 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages?: number;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
+  pagination?: Pagination;
   error?: {
     code: string;
     message: string;
   };
 }
 
-async function request<T>(
+async function rawRequest<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const response = await fetch(url, {
@@ -30,11 +38,26 @@ async function request<T>(
     throw new Error(json.error?.message || 'Erro na requisicao');
   }
 
+  return json;
+}
+
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const json = await rawRequest<T>(endpoint, options);
   return json.data as T;
+}
+
+async function requestPaginated<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<{ data: T; pagination: Pagination }> {
+  const json = await rawRequest<T>(endpoint, options);
+  return { data: json.data as T, pagination: json.pagination as Pagination };
 }
 
 export const api = {
   get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
+
+  getPaginated: <T>(endpoint: string) => requestPaginated<T>(endpoint, { method: 'GET' }),
 
   post: <T>(endpoint: string, data?: unknown) =>
     request<T>(endpoint, {
@@ -713,13 +736,13 @@ export interface ClientDetails extends Client {
 }
 
 export const clientsApi = {
-  getClients: (params?: { search?: string; inactive?: boolean; page?: number; limit?: number }) => {
+  getClients: async (params?: { search?: string; page?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
-    if (params?.inactive) query.append('inactive', 'true');
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
-    return api.get<{ clients: Client[]; total: number; page: number; pages: number }>(`/clients?${query}`);
+    const { data: clients, pagination } = await api.getPaginated<Client[]>(`/clients?${query}`);
+    return { clients, total: pagination.total, page: pagination.page, pages: pagination.pages ?? 1 };
   },
 
   getClient: (id: string) => api.get<ClientDetails>(`/clients/${id}`),
@@ -731,9 +754,6 @@ export const clientsApi = {
     api.put<Client>(`/clients/${id}`, data),
 
   deleteClient: (id: string) => api.delete(`/clients/${id}`),
-
-  getOrCreate: (phone: string, name?: string) =>
-    api.post<Client>('/clients/find-or-create', { phone, name }),
 
   getBirthdays: (params?: { startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();

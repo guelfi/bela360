@@ -1,70 +1,121 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExportButton } from '@/components/ExportButton';
 import { exportData, ExportFormat } from '@/lib/export';
+import { servicesApi, professionalsApi, Service } from '@/lib/api';
 
-interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  duration: number;
-  price: number;
-  professionals: string[];
-  active: boolean;
-}
+const serviceSchema = z.object({
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
+  description: z.string().max(500).optional(),
+  duration: z.coerce.number().min(5, 'Duracao minima de 5 minutos').max(480, 'Duracao maxima de 8 horas'),
+  price: z.coerce.number().min(0, 'Preco nao pode ser negativo'),
+});
 
-const availableProfessionals = ['Ana', 'Carlos', 'Julia'];
-
-const initialServices: Service[] = [
-  { id: '1', name: 'Corte Feminino', duration: 60, price: 80, professionals: ['Ana', 'Julia'], active: true },
-  { id: '2', name: 'Corte Masculino', duration: 30, price: 45, professionals: ['Carlos'], active: true },
-  { id: '3', name: 'Escova', duration: 45, price: 60, professionals: ['Ana', 'Julia'], active: true },
-  { id: '4', name: 'Coloracao', duration: 120, price: 180, professionals: ['Ana'], active: true },
-  { id: '5', name: 'Barba', duration: 30, price: 35, professionals: ['Carlos'], active: true },
-  { id: '6', name: 'Hidratacao', duration: 60, price: 90, professionals: ['Ana', 'Julia'], active: true },
-  { id: '7', name: 'Progressiva', duration: 180, price: 250, professionals: ['Ana'], active: false },
-];
+type ServiceFormData = z.infer<typeof serviceSchema>;
 
 export default function ServicosPage() {
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const queryClient = useQueryClient();
   const [showNewModal, setShowNewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showInactive, setShowInactive] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    duration: 60,
-    price: 0,
-    professionals: [] as string[],
-  });
-  const [saving, setSaving] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
+  const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
 
-  const filteredServices = services.filter(
-    service => showInactive || service.active
-  );
+  const { data: services = [], isLoading, isError } = useQuery({
+    queryKey: ['services', showInactive],
+    queryFn: () => servicesApi.getServices(showInactive ? undefined : { active: true }),
+  });
+
+  const { data: professionals = [] } = useQuery({
+    queryKey: ['professionals'],
+    queryFn: () => professionalsApi.getProfessionals({ active: true }),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ServiceFormData>({
+    resolver: zodResolver(serviceSchema),
+    defaultValues: { name: '', description: '', duration: 60, price: 0 },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (formData: ServiceFormData) => {
+      const created = await servicesApi.createService({
+        name: formData.name,
+        description: formData.description || undefined,
+        duration: formData.duration,
+        price: formData.price,
+      });
+      await Promise.all(
+        selectedProfessionalIds.map(profId => servicesApi.assignProfessional(created.id, profId))
+      );
+      return created;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      handleCloseModals();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (formData: ServiceFormData) => {
+      if (!selectedService) return;
+      await servicesApi.updateService(selectedService.id, {
+        name: formData.name,
+        description: formData.description || undefined,
+        duration: formData.duration,
+        price: formData.price,
+      });
+
+      const currentIds = (selectedService.professionals ?? []).map(p => p.id);
+      const toAdd = selectedProfessionalIds.filter(id => !currentIds.includes(id));
+      const toRemove = currentIds.filter(id => !selectedProfessionalIds.includes(id));
+
+      await Promise.all([
+        ...toAdd.map(id => servicesApi.assignProfessional(selectedService.id, id)),
+        ...toRemove.map(id => servicesApi.removeProfessional(selectedService.id, id)),
+      ]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      handleCloseModals();
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: (service: Service) => servicesApi.updateService(service.id, { isActive: !service.isActive }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['services'] }),
+  });
+
+  const activeCount = services.filter(s => s.isActive).length;
 
   const handleExport = (format: ExportFormat) => {
     setExporting(true);
     try {
       const data = {
         headers: ['Nome', 'Descrição', 'Duração', 'Preço', 'Profissionais', 'Status'],
-        rows: filteredServices.map(s => [
+        rows: services.map(s => [
           s.name,
           s.description || '-',
           formatDuration(s.duration),
           formatCurrency(s.price),
-          s.professionals.join(', '),
-          s.active ? 'Ativo' : 'Inativo',
+          (s.professionals ?? []).map(p => p.name).join(', '),
+          s.isActive ? 'Ativo' : 'Inativo',
         ]),
       };
 
       exportData(data, format, {
         filename: `servicos-${new Date().toISOString().split('T')[0]}`,
         title: 'Lista de Serviços',
-        subtitle: `${filteredServices.length} serviços`,
+        subtitle: `${services.length} serviços`,
       });
     } finally {
       setExporting(false);
@@ -83,91 +134,41 @@ export default function ServicosPage() {
     return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
-  const resetForm = () => {
-    setFormData({ name: '', description: '', duration: 60, price: 0, professionals: [] });
-    setSelectedService(null);
-  };
-
   const handleCloseModals = () => {
     setShowNewModal(false);
-    setShowEditModal(false);
-    resetForm();
+    setSelectedService(null);
+    setSelectedProfessionalIds([]);
+    reset();
   };
 
   const handleEdit = (service: Service) => {
     setSelectedService(service);
-    setFormData({
+    setSelectedProfessionalIds((service.professionals ?? []).map(p => p.id));
+    reset({
       name: service.name,
       description: service.description || '',
       duration: service.duration,
       price: service.price,
-      professionals: service.professionals,
     });
-    setShowEditModal(true);
   };
 
-  const handleProfessionalToggle = (prof: string) => {
-    setFormData(prev => ({
-      ...prev,
-      professionals: prev.professionals.includes(prof)
-        ? prev.professionals.filter(p => p !== prof)
-        : [...prev.professionals, prof],
-    }));
+  const handleProfessionalToggle = (profId: string) => {
+    setSelectedProfessionalIds(prev =>
+      prev.includes(profId) ? prev.filter(id => id !== profId) : [...prev, profId]
+    );
   };
 
-  const handleSubmitNew = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || formData.price <= 0) {
-      alert('Nome e preco sao obrigatorios');
-      return;
-    }
+  const onSubmitNew = (formData: ServiceFormData) => createMutation.mutate(formData);
+  const onSubmitEdit = (formData: ServiceFormData) => updateMutation.mutate(formData);
 
-    setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const newService: Service = {
-      id: Date.now().toString(),
-      name: formData.name,
-      description: formData.description,
-      duration: formData.duration,
-      price: formData.price,
-      professionals: formData.professionals,
-      active: true,
-    };
-
-    setServices(prev => [...prev, newService]);
-    handleCloseModals();
-    setSaving(false);
-  };
-
-  const handleSubmitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedService || !formData.name) return;
-
-    setSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    setServices(prev => prev.map(s =>
-      s.id === selectedService.id
-        ? { ...s, ...formData }
-        : s
-    ));
-    handleCloseModals();
-    setSaving(false);
-  };
-
-  const handleToggleActive = async (service: Service) => {
-    setServices(prev => prev.map(s =>
-      s.id === service.id ? { ...s, active: !s.active } : s
-    ));
-  };
+  const activeMutation = selectedService ? updateMutation : createMutation;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Servicos</h1>
-          <p className="text-gray-600">{services.filter(s => s.active).length} servicos ativos</p>
+          <p className="text-gray-600">{activeCount} servicos ativos</p>
         </div>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm text-gray-600">
@@ -189,13 +190,25 @@ export default function ServicosPage() {
         </div>
       </div>
 
+      {isError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-600">
+          Erro ao carregar serviços. Tente novamente.
+        </div>
+      )}
+
+      {isLoading && <p className="text-gray-500">Carregando...</p>}
+
+      {!isLoading && services.length === 0 && (
+        <p className="text-gray-500">Nenhum serviço cadastrado</p>
+      )}
+
       {/* Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredServices.map((service) => (
+        {services.map((service) => (
           <div
             key={service.id}
             className={`bg-white rounded-lg border p-6 ${
-              service.active ? 'border-gray-200' : 'border-gray-200 opacity-60'
+              service.isActive ? 'border-gray-200' : 'border-gray-200 opacity-60'
             }`}
           >
             <div className="flex items-start justify-between mb-4">
@@ -211,12 +224,15 @@ export default function ServicosPage() {
             <div className="mb-4">
               <p className="text-xs text-gray-500 mb-2">Profissionais:</p>
               <div className="flex flex-wrap gap-2">
-                {service.professionals.map((prof) => (
+                {(service.professionals ?? []).length === 0 && (
+                  <span className="text-xs text-gray-400">Nenhum vinculado</span>
+                )}
+                {(service.professionals ?? []).map((prof) => (
                   <span
-                    key={prof}
+                    key={prof.id}
                     className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
                   >
-                    {prof}
+                    {prof.name}
                   </span>
                 ))}
               </div>
@@ -224,12 +240,13 @@ export default function ServicosPage() {
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <button
-                onClick={() => handleToggleActive(service)}
+                onClick={() => toggleActiveMutation.mutate(service)}
+                disabled={toggleActiveMutation.isPending}
                 className={`text-xs font-medium cursor-pointer hover:underline ${
-                  service.active ? 'text-green-600' : 'text-gray-400'
+                  service.isActive ? 'text-green-600' : 'text-gray-400'
                 }`}
               >
-                {service.active ? 'Ativo' : 'Inativo'}
+                {service.isActive ? 'Ativo' : 'Inativo'}
               </button>
               <button
                 onClick={() => handleEdit(service)}
@@ -242,32 +259,31 @@ export default function ServicosPage() {
         ))}
       </div>
 
-      {/* New Service Modal */}
-      {showNewModal && (
+      {/* New/Edit Service Modal */}
+      {(showNewModal || selectedService) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Novo Servico</h2>
-            <form onSubmit={handleSubmitNew} className="space-y-4">
+            <h2 className="text-xl font-bold mb-4">{selectedService ? 'Editar Servico' : 'Novo Servico'}</h2>
+            {activeMutation.isError && (
+              <p className="text-red-500 text-sm mb-4">
+                {activeMutation.error instanceof Error ? activeMutation.error.message : 'Erro ao salvar serviço'}
+              </p>
+            )}
+            <form onSubmit={handleSubmit(selectedService ? onSubmitEdit : onSubmitNew)} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do servico *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do servico *</label>
                 <input
                   type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  {...register('name')}
                   placeholder="Ex: Corte Feminino"
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descricao (opcional)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descricao (opcional)</label>
                 <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  {...register('description')}
                   placeholder="Descricao do servico..."
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -275,48 +291,44 @@ export default function ServicosPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Duracao (minutos)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duracao (minutos)</label>
                   <input
                     type="number"
-                    value={formData.duration}
-                    onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
-                    min="15"
-                    step="15"
+                    {...register('duration')}
+                    min="5"
+                    step="5"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
+                  {errors.duration && <p className="text-red-500 text-xs mt-1">{errors.duration.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Preco (R$) *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preco (R$) *</label>
                   <input
                     type="number"
-                    value={formData.price || ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    {...register('price')}
                     placeholder="80.00"
                     min="0"
                     step="0.01"
-                    required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
+                  {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profissionais que realizam
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Profissionais que realizam</label>
                 <div className="space-y-2">
-                  {availableProfessionals.map((prof) => (
-                    <label key={prof} className="flex items-center gap-2 cursor-pointer">
+                  {professionals.length === 0 && (
+                    <p className="text-xs text-gray-400">Nenhum profissional cadastrado</p>
+                  )}
+                  {professionals.map((prof) => (
+                    <label key={prof.id} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={formData.professionals.includes(prof)}
-                        onChange={() => handleProfessionalToggle(prof)}
+                        checked={selectedProfessionalIds.includes(prof.id)}
+                        onChange={() => handleProfessionalToggle(prof.id)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
-                      <span className="text-sm text-gray-700">{prof}</span>
+                      <span className="text-sm text-gray-700">{prof.name}</span>
                     </label>
                   ))}
                 </div>
@@ -325,115 +337,17 @@ export default function ServicosPage() {
                 <button
                   type="button"
                   onClick={handleCloseModals}
-                  disabled={saving}
+                  disabled={isSubmitting}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={isSubmitting}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {saving ? 'Salvando...' : 'Criar Servico'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Service Modal */}
-      {showEditModal && selectedService && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Editar Servico</h2>
-            <form onSubmit={handleSubmitEdit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do servico *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descricao
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Duracao (minutos)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
-                    min="15"
-                    step="15"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Preco (R$) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                    min="0"
-                    step="0.01"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profissionais que realizam
-                </label>
-                <div className="space-y-2">
-                  {availableProfessionals.map((prof) => (
-                    <label key={prof} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.professionals.includes(prof)}
-                        onChange={() => handleProfessionalToggle(prof)}
-                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className="text-sm text-gray-700">{prof}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModals}
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-                >
-                  {saving ? 'Salvando...' : 'Salvar Alteracoes'}
+                  {isSubmitting ? 'Salvando...' : selectedService ? 'Salvar Alteracoes' : 'Criar Servico'}
                 </button>
               </div>
             </form>
