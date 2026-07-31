@@ -70,3 +70,6 @@ docker/nginx/ssl/*.crt
 
 # Debug
 .ai/
+
+# Local-only docker-compose override (ex: apontar servicos pra tunel SSH)
+docker-compose.override.yml
