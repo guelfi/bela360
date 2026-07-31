@@ -35,7 +35,7 @@ export default function DashboardLayout({
     authApi
       .me()
       .then((data) => setUser(data.user))
-      .catch(() => router.push('/'));
+      .catch(() => router.push('/login'));
   }, [router]);
 
   const visibleNavigation = navigation.filter(
@@ -46,7 +46,7 @@ export default function DashboardLayout({
     try {
       await authApi.logout();
     } finally {
-      router.push('/');
+      router.push('/login');
     }
   };
 

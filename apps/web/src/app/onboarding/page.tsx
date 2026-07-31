@@ -68,7 +68,7 @@ export default function OnboardingPage() {
               enviar um codigo por SMS/WhatsApp.
             </p>
             <Link
-              href="/"
+              href="/login"
               className="inline-block w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"
             >
               Ir para o login
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
 
         <p className="text-center text-purple-100 text-sm mt-8">
           Ja tem conta?{' '}
-          <Link href="/" className="text-white font-medium hover:underline">
+          <Link href="/login" className="text-white font-medium hover:underline">
             Fazer login
           </Link>
         </p>

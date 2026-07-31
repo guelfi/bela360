@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
 
-export default function ProfessionalLoginPage() {
+const BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1600&q=80';
+
+export default function LoginPage() {
   const router = useRouter();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
@@ -43,14 +46,12 @@ export default function ProfessionalLoginPage() {
     try {
       const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
 
-      if (data.user.role !== 'PROFESSIONAL') {
-        // Cookie ja foi setado pela API para esse usuario, mas ele nao e
-        // profissional - desfaz a sessao antes de recusar o acesso.
-        await authApi.logout();
-        throw new Error('Esta area e exclusiva para profissionais');
+      // Redirect based on role (o token ja foi setado como cookie httpOnly pela API)
+      if (data.user.role === 'PROFESSIONAL') {
+        router.push('/profissional/meu-painel');
+      } else {
+        router.push('/dashboard');
       }
-
-      router.push('/profissional/meu-painel');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Codigo invalido');
     } finally {
@@ -59,35 +60,37 @@ export default function ProfessionalLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <main
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center relative"
+      style={{ backgroundImage: `url('${BACKGROUND_IMAGE}')` }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/85 to-pink-700/80" />
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Area do Profissional</h1>
-          <p className="text-indigo-100">Acesse sua agenda e comissoes</p>
+          <Link href="/" className="inline-block">
+            <h1 className="text-4xl font-bold text-white mb-2">bela360</h1>
+          </Link>
+          <p className="text-purple-100">Automacao para negocios de beleza</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {step === 'phone' ? (
             <form onSubmit={handleRequestOTP}>
               <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                Entrar como profissional
+                Entrar na sua conta
               </h2>
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seu telefone cadastrado
+                  Telefone
                 </label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(formatPhone(e.target.value))}
                   placeholder="(11) 99999-9999"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   maxLength={15}
                   required
                 />
@@ -100,9 +103,9 @@ export default function ProfessionalLoginPage() {
               <button
                 type="submit"
                 disabled={loading || phone.replace(/\D/g, '').length < 10}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Enviando...' : 'Receber codigo'}
+                {loading ? 'Enviando...' : 'Enviar codigo'}
               </button>
             </form>
           ) : (
@@ -120,7 +123,7 @@ export default function ProfessionalLoginPage() {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="000000"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   maxLength={6}
                   required
                 />
@@ -133,7 +136,7 @@ export default function ProfessionalLoginPage() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-4"
+                className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-4"
               >
                 {loading ? 'Verificando...' : 'Entrar'}
               </button>
@@ -145,7 +148,7 @@ export default function ProfessionalLoginPage() {
                   setOtp('');
                   setError('');
                 }}
-                className="w-full text-indigo-600 py-2 font-medium hover:underline"
+                className="w-full text-purple-600 py-2 font-medium hover:underline"
               >
                 Usar outro numero
               </button>
@@ -153,17 +156,12 @@ export default function ProfessionalLoginPage() {
           )}
         </div>
 
-        <div className="text-center mt-8 space-y-4">
-          <p className="text-indigo-100 text-sm">
-            E dono do negocio?{' '}
-            <Link href="/login" className="text-white font-medium hover:underline">
-              Acesse aqui
-            </Link>
-          </p>
-          <p className="text-indigo-200/60 text-xs">
-            Seu acesso deve ser criado pelo administrador do salao
-          </p>
-        </div>
+        <p className="text-center text-purple-100 text-sm mt-8">
+          Novo por aqui?{' '}
+          <Link href="/onboarding" className="text-white font-medium hover:underline">
+            Cadastre seu negocio
+          </Link>
+        </p>
       </div>
     </main>
   );

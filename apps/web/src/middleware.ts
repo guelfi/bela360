@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PUBLIC_PATHS = new Set(['/', '/profissional']);
+const PUBLIC_PATHS = new Set(['/', '/login', '/profissional']);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get('accessToken');
   if (!token) {
-    const loginPath = pathname.startsWith('/profissional') ? '/profissional' : '/';
+    const loginPath = pathname.startsWith('/profissional') ? '/profissional' : '/login';
     const url = request.nextUrl.clone();
     url.pathname = loginPath;
     return NextResponse.redirect(url);

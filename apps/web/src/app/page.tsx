@@ -1,158 +1,267 @@
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authApi } from '@/lib/api';
 
-export default function LoginPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+const HERO_IMAGE =
+  'https://images.unsplash.com/photo-1695527081848-1e46c06e6458?auto=format&fit=crop&w=1200&q=80';
+const FEATURE_IMAGE_1 =
+  'https://images.unsplash.com/photo-1660505102581-85cffa4e6550?auto=format&fit=crop&w=800&q=80';
+const FEATURE_IMAGE_2 =
+  'https://images.unsplash.com/photo-1626383137804-ff908d2753a2?auto=format&fit=crop&w=1400&q=80';
 
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-  };
+const FEATURES = [
+  {
+    icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+    title: 'Agenda que nao deixa furo',
+    description:
+      'Horarios organizados por profissional, confirmacao automatica e lista de espera pra nunca deixar um horario vago.',
+  },
+  {
+    icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+    title: 'Lembrete automatico no WhatsApp',
+    description:
+      'Sua cliente recebe o lembrete do horario sozinha, sem voce precisar mandar mensagem uma por uma.',
+  },
+  {
+    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    title: 'Fidelidade que traz cliente de volta',
+    description:
+      'Pontos por visita, recompensas e um motivo a mais pra ela voltar no seu salao em vez de experimentar outro.',
+  },
+  {
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+    title: 'Estoque sob controle',
+    description:
+      'Saiba quando o produto ta acabando antes que ele acabe de verdade, sem planilha e sem susto.',
+  },
+  {
+    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    title: 'Financeiro sem mistério',
+    description:
+      'Quanto entrou, quanto saiu e quanto cada profissional rendeu no mes - tudo num lugar so, sem calculadora.',
+  },
+  {
+    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    title: 'Toda a equipe, um so sistema',
+    description:
+      'Cada profissional ve so a propria agenda e comissao; voce ve o salao inteiro. Sem confusao, sem planilha compartilhada.',
+  },
+];
 
-  const handleRequestOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const STEPS = [
+  {
+    number: '1',
+    title: 'Cadastre seu negocio',
+    description: 'Nome do salao e seu telefone. Menos de 2 minutos, sem cartao de credito.',
+  },
+  {
+    number: '2',
+    title: 'Configure equipe e servicos',
+    description: 'Adicione seus profissionais, servicos e horarios de funcionamento.',
+  },
+  {
+    number: '3',
+    title: 'Comece a atender',
+    description: 'Sua agenda ja esta pronta pra receber o primeiro agendamento.',
+  },
+];
 
-    try {
-      await authApi.requestOTP(phone.replace(/\D/g, ''));
-      setStep('otp');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao enviar codigo');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
-
-      // Redirect based on role (o token ja foi setado como cookie httpOnly pela API)
-      if (data.user.role === 'PROFESSIONAL') {
-        router.push('/profissional/meu-painel');
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Codigo invalido');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">bela360</h1>
-          <p className="text-purple-100">Automacao para negocios de beleza</p>
+    <main className="min-h-screen bg-white">
+      {/* Nav */}
+      <header className="border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+            bela360
+          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-gray-600 hover:text-purple-600 font-medium text-sm"
+            >
+              Entrar
+            </Link>
+            <Link
+              href="/onboarding"
+              className="bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-purple-700 transition-colors"
+            >
+              Cadastre seu negocio
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
+              Sua agenda cheia.
+              <br />
+              <span className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+                Sua cabeca livre.
+              </span>
+            </h1>
+            <p className="text-lg text-gray-600 mb-8 max-w-lg">
+              O bela360 organiza agenda, clientes, financeiro e WhatsApp do seu salao ou
+              barbearia num so lugar - pra voce parar de administrar planilha e voltar a
+              cuidar de gente.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/onboarding"
+                className="bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200"
+              >
+                Cadastre seu negocio gratis
+              </Link>
+              <Link
+                href="/login"
+                className="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold border border-purple-200 hover:bg-purple-50 transition-colors"
+              >
+                Ja tenho conta
+              </Link>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="rounded-2xl overflow-hidden shadow-2xl aspect-[4/5]">
+              <img
+                src={HERO_IMAGE}
+                alt="Profissional de beleza atendendo cliente em salao"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">
+            Tudo que o seu negocio precisa, em um so lugar
+          </h2>
+          <p className="text-gray-600 max-w-xl mx-auto">
+            Sem planilha, sem caderno, sem sistema separado pra cada coisa.
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          {step === 'phone' ? (
-            <form onSubmit={handleRequestOTP}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">
-                Entrar na sua conta
-              </h2>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Telefone
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(formatPhone(e.target.value))}
-                  placeholder="(11) 99999-9999"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  maxLength={15}
-                  required
-                />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {FEATURES.map((feature) => (
+            <div
+              key={feature.title}
+              className="p-6 rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all"
+            >
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-4">
+                <svg
+                  className="w-6 h-6 text-purple-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={feature.icon} />
+                </svg>
               </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-              {error && (
-                <p className="text-red-500 text-sm mb-4">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || phone.replace(/\D/g, '').length < 10}
-                className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Enviando...' : 'Enviar codigo'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOTP}>
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                Digite o codigo
-              </h2>
-              <p className="text-gray-600 text-sm mb-6">
-                Enviamos um codigo para {phone}
+      {/* Image break */}
+      <section className="relative">
+        <div className="h-64 md:h-96 relative overflow-hidden">
+          <img
+            src={FEATURE_IMAGE_2}
+            alt="Interior de salao de beleza organizado"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/70 to-pink-800/50 flex items-center">
+            <div className="max-w-6xl mx-auto px-4 w-full">
+              <p className="text-white text-2xl md:text-3xl font-semibold max-w-lg">
+                Feito pro ritmo de quem vive de agenda cheia e cliente satisfeita.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="000000"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  maxLength={6}
-                  required
-                />
-              </div>
-
-              {error && (
-                <p className="text-red-500 text-sm mb-4">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || otp.length !== 6}
-                className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-4"
-              >
-                {loading ? 'Verificando...' : 'Entrar'}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setStep('phone');
-                  setOtp('');
-                  setError('');
-                }}
-                className="w-full text-purple-600 py-2 font-medium hover:underline"
-              >
-                Usar outro numero
-              </button>
-            </form>
-          )}
+      {/* How it works */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">Comece em 3 passos</h2>
+          <p className="text-gray-600">Do cadastro ao primeiro agendamento, sem complicacao.</p>
         </div>
 
-        <p className="text-center text-purple-100 text-sm mt-8">
-          Novo por aqui?{' '}
-          <Link href="/onboarding" className="text-white font-medium hover:underline">
-            Cadastre seu negocio
+        <div className="grid md:grid-cols-3 gap-10">
+          {STEPS.map((step) => (
+            <div key={step.number} className="text-center">
+              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-purple-600 to-pink-500 text-white text-xl font-bold flex items-center justify-center mb-5">
+                {step.number}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
+              <p className="text-gray-600 text-sm">{step.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Secondary showcase */}
+      <section className="bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
+          <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
+            <img
+              src={FEATURE_IMAGE_1}
+              alt="Mesa de manicure organizada em salao de beleza"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="order-1 md:order-2">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Menos tempo administrando, mais tempo atendendo
+            </h2>
+            <p className="text-gray-600 mb-6">
+              O bela360 foi pensado pra quem toca o salao no dia a dia - simples de usar entre
+              um atendimento e outro, direto do celular ou do computador do balcao.
+            </p>
+            <Link
+              href="/onboarding"
+              className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            >
+              Quero organizar meu salao
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="bg-gradient-to-br from-purple-600 to-pink-500">
+        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Pronta pra parar de administrar no caderno?
+          </h2>
+          <p className="text-purple-100 text-lg mb-8 max-w-xl mx-auto">
+            Cadastre seu negocio agora e comece a usar o bela360 hoje mesmo.
+          </p>
+          <Link
+            href="/onboarding"
+            className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold hover:bg-purple-50 transition-colors shadow-lg"
+          >
+            Cadastre seu negocio gratis
           </Link>
-        </p>
-      </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+            bela360
+          </span>
+          <p className="text-gray-500 text-sm">
+            Automacao para negocios de beleza.
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
