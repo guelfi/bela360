@@ -19,6 +19,20 @@ export class WaitlistService {
   async add(businessId: string, data: z.infer<typeof createWaitlistSchema>) {
     const validated = createWaitlistSchema.parse(data);
 
+    // Verifica que client/service/professional pertencem a este negocio
+    // antes de usar - sem isso, o "include" do retorno vazaria nome/
+    // telefone de cliente de outro negocio dentro desta lista de espera.
+    const [client, service, professional] = await Promise.all([
+      prisma.client.findFirst({ where: { id: validated.clientId, businessId } }),
+      prisma.service.findFirst({ where: { id: validated.serviceId, businessId } }),
+      validated.professionalId
+        ? prisma.user.findFirst({ where: { id: validated.professionalId, businessId } })
+        : Promise.resolve(true),
+    ]);
+    if (!client) throw new AppError('Cliente não encontrado', 404);
+    if (!service) throw new AppError('Serviço não encontrado', 404);
+    if (!professional) throw new AppError('Profissional não encontrado', 404);
+
     // Check if client is already in waitlist for same date/service
     const existing = await prisma.waitlist.findFirst({
       where: {

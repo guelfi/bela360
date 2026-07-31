@@ -420,6 +420,19 @@ export class MarketingService {
       throw new AppError('Cliente não encontrado', 404);
     }
 
+    // Verify appointment and professional belong to the same business
+    const [appointment, professional] = await Promise.all([
+      prisma.appointment.findFirst({ where: { id: validated.appointmentId, businessId } }),
+      prisma.user.findFirst({ where: { id: validated.professionalId, businessId } }),
+    ]);
+
+    if (!appointment) {
+      throw new AppError('Agendamento não encontrado', 404);
+    }
+    if (!professional) {
+      throw new AppError('Profissional não encontrado', 404);
+    }
+
     // Check for existing rating for same appointment
     const existing = await prisma.clientRating.findUnique({
       where: { appointmentId: validated.appointmentId },

@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../config';
+import { requireRole } from '../../common/middleware/rbac.middleware';
 
 const router: Router = Router();
+const businessManager = requireRole('OWNER', 'ADMIN');
 
 // Get professional profile
 router.get('/profile', async (req: Request, res: Response) => {
@@ -249,14 +251,14 @@ router.get('/goals', async (req: Request, res: Response) => {
 });
 
 // Set goal (owner only)
-router.post('/goals/:userId', async (req: Request, res: Response) => {
+router.post('/goals/:userId', businessManager, async (req: Request, res: Response) => {
   try {
     const businessId = req.user!.businessId;
     const { userId: targetUserId } = req.params;
     const data = req.body;
 
-    const profile = await prisma.professionalProfile.findUnique({
-      where: { userId: targetUserId },
+    const profile = await prisma.professionalProfile.findFirst({
+      where: { userId: targetUserId, user: { businessId } },
     });
 
     if (!profile) {
@@ -437,13 +439,14 @@ router.get('/badges', async (req: Request, res: Response) => {
 });
 
 // Award badge (system or owner)
-router.post('/badges/:userId', async (req: Request, res: Response) => {
+router.post('/badges/:userId', businessManager, async (req: Request, res: Response) => {
   try {
+    const businessId = req.user!.businessId;
     const { userId: targetUserId } = req.params;
     const data = req.body;
 
-    const profile = await prisma.professionalProfile.findUnique({
-      where: { userId: targetUserId },
+    const profile = await prisma.professionalProfile.findFirst({
+      where: { userId: targetUserId, user: { businessId } },
     });
 
     if (!profile) {
@@ -817,11 +820,12 @@ router.post('/marketing/send', async (req: Request, res: Response) => {
       });
     }
 
-    // Get message content from template if provided
+    // Get message content from template if provided (so de templates globais
+    // ou do proprio negocio - businessId null = template global)
     let finalMessage = message;
     if (templateId) {
-      const template = await prisma.contentTemplate.findUnique({
-        where: { id: templateId },
+      const template = await prisma.contentTemplate.findFirst({
+        where: { id: templateId, OR: [{ businessId }, { businessId: null }] },
       });
       if (template) {
         finalMessage = template.content;
