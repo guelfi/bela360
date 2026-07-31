@@ -16,36 +16,43 @@ interface DecodedToken {
   exp: number;
 }
 
+/**
+ * Extrai o token do cookie httpOnly (fonte primaria, usada pelo frontend
+ * web) com fallback para o header Authorization: Bearer (scripts, testes,
+ * chamadas server-to-server).
+ */
+function extractToken(req: Request): string {
+  const cookieToken = req.cookies?.accessToken;
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    throw new AuthenticationError('Token não fornecido');
+  }
+
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || !/^Bearer$/i.test(parts[0])) {
+    throw new AuthenticationError('Token mal formatado');
+  }
+
+  return parts[1];
+}
+
 export function authMiddleware(
   req: Request,
   _res: Response,
   next: NextFunction
 ): void {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      throw new AuthenticationError('Token não fornecido');
-    }
-
-    const parts = authHeader.split(' ');
-
-    if (parts.length !== 2) {
-      throw new AuthenticationError('Token mal formatado');
-    }
-
-    const [scheme, token] = parts;
-
-    if (!/^Bearer$/i.test(scheme)) {
-      throw new AuthenticationError('Token mal formatado');
-    }
-
+    const token = extractToken(req);
     const decoded = jwt.verify(token, env.JWT_SECRET) as DecodedToken;
 
     req.user = {
       userId: decoded.userId,
       businessId: decoded.businessId,
-      role: decoded.role as Request['user'] extends { role: infer R } ? R : never,
+      role: decoded.role,
     };
 
     next();

@@ -1,7 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from './auth.service';
-import { prisma } from '../../config';
+import { prisma, env } from '../../config';
+
+const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
+
+function cookieOptions(maxAgeMs: number) {
+  return {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    maxAge: maxAgeMs,
+    path: '/',
+  };
+}
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string, expiresIn: number) {
+  res.cookie('accessToken', accessToken, cookieOptions(expiresIn * 1000));
+  res.cookie('refreshToken', refreshToken, cookieOptions(REFRESH_COOKIE_MAX_AGE_MS));
+}
+
+function clearAuthCookies(res: Response) {
+  res.clearCookie('accessToken', { path: '/' });
+  res.clearCookie('refreshToken', { path: '/' });
+}
 
 // Validation schemas
 const requestOTPSchema = z.object({
@@ -48,6 +70,8 @@ export class AuthController {
 
       const tokens = await authService.verifyOTP(phone, otp);
 
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+
       // Get user info
       const user = await prisma.user.findFirst({
         where: { phone: phone.replace(/\D/g, '') },
@@ -67,9 +91,6 @@ export class AuthController {
       res.json({
         success: true,
         data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          expiresIn: tokens.expiresIn,
           user: {
             id: user!.id,
             name: user!.name,
@@ -90,17 +111,18 @@ export class AuthController {
    */
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const { refreshToken } = refreshTokenSchema.parse(req.body);
+      const cookieToken = req.cookies?.refreshToken;
+      const { refreshToken } = cookieToken
+        ? { refreshToken: cookieToken as string }
+        : refreshTokenSchema.parse(req.body);
 
       const tokens = await authService.refreshToken(refreshToken);
 
+      setAuthCookies(res, tokens.accessToken, tokens.refreshToken, tokens.expiresIn);
+
       res.json({
         success: true,
-        data: {
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          expiresIn: tokens.expiresIn,
-        },
+        data: { expiresIn: tokens.expiresIn },
       });
     } catch (error) {
       next(error);
@@ -116,6 +138,8 @@ export class AuthController {
       if (userId) {
         await authService.logout(userId);
       }
+
+      clearAuthCookies(res);
 
       res.json({
         success: true,

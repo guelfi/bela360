@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import pinoHttp from 'pino-http';
@@ -37,6 +38,31 @@ app.use(
     credentials: true,
   })
 );
+
+// Cookies (para o JWT em cookie httpOnly)
+app.use(cookieParser());
+
+// Mitigacao de CSRF: com o token em cookie httpOnly, requisicoes de
+// mutacao vindas de outro site tambem enviariam o cookie automaticamente.
+// SameSite=Lax ja bloqueia a maioria dos casos; isso complementa checando
+// que o Origin (quando enviado, como sempre acontece em requisicoes de
+// browser) bate com o frontend esperado. Requisicoes sem Origin (curl,
+// server-to-server, webhook da Evolution API) nao sao afetadas - nao sao
+// o vetor que CSRF explora.
+app.use((req: Request, res: Response, next) => {
+  const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+  const origin = req.headers.origin;
+
+  if (isMutation && origin && origin !== env.FRONTEND_URL) {
+    res.status(403).json({
+      success: false,
+      error: { code: 'INVALID_ORIGIN', message: 'Origem não permitida' },
+    });
+    return;
+  }
+
+  next();
+});
 
 // Rate limiting
 app.use(
