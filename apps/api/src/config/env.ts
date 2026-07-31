@@ -29,6 +29,12 @@ const envSchema = z.object({
   // virgula - usado em dev local onde o mesmo app e acessado por mais de um
   // host (ex: via proxy nginx local em vez da porta direta do Next.js).
   CORS_ALLOWED_ORIGINS: z.string().optional(),
+  // Flag "Secure" nos cookies de sessao - desligada por padrao porque o
+  // deploy atual na OCI serve tudo em HTTP puro (IP direto, sem TLS); um
+  // cookie Secure sobre HTTP nunca e enviado de volta pelo navegador,
+  // quebrando o login inteiro em producao. Ligar via env quando o dominio
+  // tiver HTTPS.
+  COOKIE_SECURE: z.coerce.boolean().default(false),
 
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

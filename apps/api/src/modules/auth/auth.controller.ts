@@ -8,7 +8,7 @@ const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 function cookieOptions(maxAgeMs: number) {
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
+    secure: env.COOKIE_SECURE,
     sameSite: 'lax' as const,
     maxAge: maxAgeMs,
     path: '/',

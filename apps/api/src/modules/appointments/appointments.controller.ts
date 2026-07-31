@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { appointmentsService } from './appointments.service';
+import { NotFoundError } from '../../common/errors';
 
 const createAppointmentSchema = z.object({
   clientId: z.string().cuid(),
@@ -61,6 +62,12 @@ export class AppointmentsController {
       const businessId = req.user!.businessId;
       const { page, limit, ...filters } = filtersSchema.parse(req.query);
 
+      // PROFESSIONAL só enxerga a própria agenda - ignora qualquer
+      // professionalId vindo da query e forca o proprio id.
+      if (req.user!.role === 'PROFESSIONAL') {
+        filters.professionalId = req.user!.userId;
+      }
+
       const result = await appointmentsService.getAll(businessId, filters, page, limit);
 
       res.json({
@@ -84,6 +91,7 @@ export class AppointmentsController {
     try {
       const { id } = req.params;
       const appointment = await appointmentsService.getById(id, req.user!.businessId);
+      this.assertProfessionalOwnership(req, appointment.professionalId);
 
       res.json({
         success: true,
@@ -95,12 +103,35 @@ export class AppointmentsController {
   }
 
   /**
+   * PROFESSIONAL só pode ver/agir sobre a própria agenda - trata como
+   * "não encontrado" (mesmo padrão de IDOR entre negócios) em vez de 403,
+   * pra não revelar que o agendamento existe em outra agenda.
+   */
+  private assertProfessionalOwnership(req: Request, professionalId: string): void {
+    if (req.user!.role === 'PROFESSIONAL' && professionalId !== req.user!.userId) {
+      throw new NotFoundError('Agendamento');
+    }
+  }
+
+  /**
+   * Mesma checagem, mas buscando o agendamento primeiro - usado nas
+   * ações que não retornam o professionalId de graça antes de agir.
+   * Só faz a query extra quando o papel é PROFESSIONAL.
+   */
+  private async assertProfessionalOwnershipById(req: Request, id: string): Promise<void> {
+    if (req.user!.role !== 'PROFESSIONAL') return;
+    const appointment = await appointmentsService.getById(id, req.user!.businessId);
+    this.assertProfessionalOwnership(req, appointment.professionalId);
+  }
+
+  /**
    * Update appointment
    */
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const data = updateAppointmentSchema.parse(req.body);
+      await this.assertProfessionalOwnershipById(req, id);
       const appointment = await appointmentsService.update(id, req.user!.businessId, data);
 
       res.json({
@@ -118,6 +149,7 @@ export class AppointmentsController {
   async confirm(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      await this.assertProfessionalOwnershipById(req, id);
       const appointment = await appointmentsService.confirm(id, req.user!.businessId);
 
       res.json({
@@ -136,6 +168,7 @@ export class AppointmentsController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
+      await this.assertProfessionalOwnershipById(req, id);
       const appointment = await appointmentsService.cancel(id, req.user!.businessId, reason);
 
       res.json({
@@ -153,6 +186,7 @@ export class AppointmentsController {
   async complete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      await this.assertProfessionalOwnershipById(req, id);
       const appointment = await appointmentsService.complete(id, req.user!.businessId);
 
       res.json({
@@ -170,6 +204,7 @@ export class AppointmentsController {
   async noShow(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      await this.assertProfessionalOwnershipById(req, id);
       const appointment = await appointmentsService.noShow(id, req.user!.businessId);
 
       res.json({
@@ -218,7 +253,11 @@ export class AppointmentsController {
 
       const result = await appointmentsService.getAll(
         businessId,
-        { startDate: today, endDate: tomorrow },
+        {
+          startDate: today,
+          endDate: tomorrow,
+          professionalId: req.user!.role === 'PROFESSIONAL' ? req.user!.userId : undefined,
+        },
         1,
         100
       );
