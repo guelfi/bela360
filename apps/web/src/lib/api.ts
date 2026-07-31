@@ -238,6 +238,16 @@ export const authApi = {
   me: () => api.get<{ user: User; business: Business }>('/auth/me'),
 };
 
+export interface OnboardingData {
+  name: string;
+  phone: string;
+  email?: string;
+  type?: 'SALON' | 'BARBERSHOP' | 'AESTHETICS' | 'SPA' | 'OTHER';
+  ownerName: string;
+  ownerPhone: string;
+  ownerEmail?: string;
+}
+
 // ============================================
 // Inventory/Stock API
 // ============================================
@@ -1008,6 +1018,9 @@ export interface BusinessSettings {
 }
 
 export const businessApi = {
+  // Publico, sem auth (usado na tela de onboarding, antes de existir sessao)
+  onboard: (data: OnboardingData) => api.post<Business>('/business/onboarding', data),
+
   getBusiness: () => api.get<Business>('/business'),
 
   updateBusiness: (data: Partial<Business>) =>
