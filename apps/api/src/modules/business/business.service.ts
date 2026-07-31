@@ -311,8 +311,14 @@ export class BusinessService {
    */
   async updateProfessional(
     id: string,
+    businessId: string,
     data: Partial<CreateProfessionalDTO>
   ): Promise<any> {
+    const existing = await prisma.user.findFirst({ where: { id, businessId } });
+    if (!existing) {
+      throw new AppError('Profissional não encontrado', 404);
+    }
+
     const professional = await prisma.user.update({
       where: { id },
       data: {
@@ -331,7 +337,12 @@ export class BusinessService {
   /**
    * Remove professional (soft delete)
    */
-  async removeProfessional(id: string): Promise<void> {
+  async removeProfessional(id: string, businessId: string): Promise<void> {
+    const existing = await prisma.user.findFirst({ where: { id, businessId } });
+    if (!existing) {
+      throw new AppError('Profissional não encontrado', 404);
+    }
+
     await prisma.user.update({
       where: { id },
       data: { isActive: false },

@@ -6,7 +6,7 @@ const router: Router = Router();
 // Get loyalty program for business
 router.get('/program', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
 
     const program = await prisma.loyaltyProgram.findUnique({
       where: { businessId },
@@ -31,7 +31,7 @@ router.get('/program', async (req: Request, res: Response) => {
 // Create or update loyalty program
 router.post('/program', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
     const data = req.body;
 
     const program = await prisma.loyaltyProgram.upsert({
@@ -63,7 +63,7 @@ router.post('/program', async (req: Request, res: Response) => {
 // Get client loyalty points
 router.get('/clients/:clientId/points', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
     const { clientId } = req.params;
 
     let points = await prisma.loyaltyPoints.findUnique({
@@ -96,7 +96,7 @@ router.get('/clients/:clientId/points', async (req: Request, res: Response) => {
 // Add points to client
 router.post('/clients/:clientId/points/add', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
     const { clientId } = req.params;
     const { amount, appointmentId, description } = req.body;
 
@@ -161,7 +161,7 @@ router.post('/clients/:clientId/points/add', async (req: Request, res: Response)
 // Get rewards list
 router.get('/rewards', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
 
     const program = await prisma.loyaltyProgram.findUnique({
       where: { businessId },
@@ -182,7 +182,7 @@ router.get('/rewards', async (req: Request, res: Response) => {
 // Create reward
 router.post('/rewards', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
     const data = req.body;
 
     const program = await prisma.loyaltyProgram.findUnique({
@@ -288,7 +288,7 @@ router.post('/clients/:clientId/redeem/:rewardId', async (req: Request, res: Res
 // Dashboard stats
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const businessId = (req as any).businessId;
+    const businessId = req.user!.businessId;
 
     const [program, totalPoints, tierDistribution, recentRedemptions] = await Promise.all([
       prisma.loyaltyProgram.findUnique({ where: { businessId } }),

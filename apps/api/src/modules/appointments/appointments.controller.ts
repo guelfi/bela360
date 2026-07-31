@@ -83,7 +83,7 @@ export class AppointmentsController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const appointment = await appointmentsService.getById(id);
+      const appointment = await appointmentsService.getById(id, req.user!.businessId);
 
       res.json({
         success: true,
@@ -101,7 +101,7 @@ export class AppointmentsController {
     try {
       const { id } = req.params;
       const data = updateAppointmentSchema.parse(req.body);
-      const appointment = await appointmentsService.update(id, data);
+      const appointment = await appointmentsService.update(id, req.user!.businessId, data);
 
       res.json({
         success: true,
@@ -118,7 +118,7 @@ export class AppointmentsController {
   async confirm(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const appointment = await appointmentsService.confirm(id);
+      const appointment = await appointmentsService.confirm(id, req.user!.businessId);
 
       res.json({
         success: true,
@@ -136,7 +136,7 @@ export class AppointmentsController {
     try {
       const { id } = req.params;
       const { reason } = req.body;
-      const appointment = await appointmentsService.cancel(id, reason);
+      const appointment = await appointmentsService.cancel(id, req.user!.businessId, reason);
 
       res.json({
         success: true,
@@ -153,7 +153,7 @@ export class AppointmentsController {
   async complete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const appointment = await appointmentsService.complete(id);
+      const appointment = await appointmentsService.complete(id, req.user!.businessId);
 
       res.json({
         success: true,
@@ -170,7 +170,7 @@ export class AppointmentsController {
   async noShow(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const appointment = await appointmentsService.noShow(id);
+      const appointment = await appointmentsService.noShow(id, req.user!.businessId);
 
       res.json({
         success: true,

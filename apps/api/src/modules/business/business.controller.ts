@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { businessService } from './business.service';
+import { NotFoundError } from '../../common/errors';
 
 // Validation schemas
 const createBusinessSchema = z.object({
@@ -100,6 +101,9 @@ export class BusinessController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      if (id !== req.user!.businessId) {
+        throw new NotFoundError('Estabelecimento');
+      }
       const business = await businessService.getById(id);
 
       res.json({
@@ -191,7 +195,7 @@ export class BusinessController {
     try {
       const { id } = req.params;
       const data = createProfessionalSchema.partial().parse(req.body);
-      const professional = await businessService.updateProfessional(id, data);
+      const professional = await businessService.updateProfessional(id, req.user!.businessId, data);
 
       res.json({
         success: true,
@@ -208,7 +212,7 @@ export class BusinessController {
   async removeProfessional(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      await businessService.removeProfessional(id);
+      await businessService.removeProfessional(id, req.user!.businessId);
 
       res.json({
         success: true,

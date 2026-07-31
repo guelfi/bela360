@@ -60,7 +60,7 @@ export class ServicesController {
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      const service = await servicesService.getById(id);
+      const service = await servicesService.getById(id, req.user!.businessId);
 
       res.json({
         success: true,
@@ -78,7 +78,7 @@ export class ServicesController {
     try {
       const { id } = req.params;
       const data = updateServiceSchema.parse(req.body);
-      const service = await servicesService.update(id, data);
+      const service = await servicesService.update(id, req.user!.businessId, data);
 
       res.json({
         success: true,
@@ -95,7 +95,7 @@ export class ServicesController {
   async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
-      await servicesService.delete(id);
+      await servicesService.delete(id, req.user!.businessId);
 
       res.json({
         success: true,
@@ -112,7 +112,7 @@ export class ServicesController {
   async getByProfessional(req: Request, res: Response, next: NextFunction) {
     try {
       const { professionalId } = req.params;
-      const services = await servicesService.getByProfessional(professionalId);
+      const services = await servicesService.getByProfessional(professionalId, req.user!.businessId);
 
       res.json({
         success: true,

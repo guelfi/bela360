@@ -157,9 +157,9 @@ export class AppointmentsService {
   /**
    * Get appointment by ID
    */
-  async getById(id: string): Promise<any> {
-    const appointment = await prisma.appointment.findUnique({
-      where: { id },
+  async getById(id: string, businessId: string): Promise<any> {
+    const appointment = await prisma.appointment.findFirst({
+      where: { id, businessId },
       include: {
         client: true,
         professional: true,
@@ -178,9 +178,9 @@ export class AppointmentsService {
   /**
    * Update appointment
    */
-  async update(id: string, data: UpdateAppointmentDTO): Promise<any> {
-    const existing = await prisma.appointment.findUnique({
-      where: { id },
+  async update(id: string, businessId: string, data: UpdateAppointmentDTO): Promise<any> {
+    const existing = await prisma.appointment.findFirst({
+      where: { id, businessId },
       include: { service: true },
     });
 
@@ -246,7 +246,9 @@ export class AppointmentsService {
   /**
    * Confirm appointment
    */
-  async confirm(id: string): Promise<any> {
+  async confirm(id: string, businessId: string): Promise<any> {
+    await this.assertOwnership(id, businessId);
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: {
@@ -278,7 +280,9 @@ export class AppointmentsService {
   /**
    * Cancel appointment
    */
-  async cancel(id: string, reason?: string): Promise<any> {
+  async cancel(id: string, businessId: string, reason?: string): Promise<any> {
+    await this.assertOwnership(id, businessId);
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: {
@@ -313,7 +317,9 @@ export class AppointmentsService {
   /**
    * Mark appointment as completed
    */
-  async complete(id: string): Promise<any> {
+  async complete(id: string, businessId: string): Promise<any> {
+    await this.assertOwnership(id, businessId);
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: { status: 'COMPLETED' },
@@ -334,7 +340,9 @@ export class AppointmentsService {
   /**
    * Mark as no-show
    */
-  async noShow(id: string): Promise<any> {
+  async noShow(id: string, businessId: string): Promise<any> {
+    await this.assertOwnership(id, businessId);
+
     const appointment = await prisma.appointment.update({
       where: { id },
       data: { status: 'NO_SHOW' },
@@ -461,6 +469,17 @@ export class AppointmentsService {
     }
 
     return slots;
+  }
+
+  /**
+   * Garante que o agendamento existe e pertence ao negocio autenticado,
+   * sem retornar o registro (usado nas acoes que so fazem update por id).
+   */
+  private async assertOwnership(id: string, businessId: string): Promise<void> {
+    const appointment = await prisma.appointment.findFirst({ where: { id, businessId } });
+    if (!appointment) {
+      throw new AppError('Agendamento não encontrado', 404);
+    }
   }
 
   /**

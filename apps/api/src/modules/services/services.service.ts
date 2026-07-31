@@ -116,9 +116,9 @@ export class ServicesService {
   /**
    * Get service by ID
    */
-  async getById(id: string): Promise<any> {
-    const service = await prisma.service.findUnique({
-      where: { id },
+  async getById(id: string, businessId: string): Promise<any> {
+    const service = await prisma.service.findFirst({
+      where: { id, businessId },
       include: {
         professionals: {
           include: {
@@ -145,7 +145,12 @@ export class ServicesService {
   /**
    * Update service
    */
-  async update(id: string, data: UpdateServiceDTO): Promise<any> {
+  async update(id: string, businessId: string, data: UpdateServiceDTO): Promise<any> {
+    const owned = await prisma.service.findFirst({ where: { id, businessId } });
+    if (!owned) {
+      throw new AppError('Serviço não encontrado', 404);
+    }
+
     // Check if changing name and new name already exists
     if (data.name) {
       const service = await prisma.service.findUnique({ where: { id } });
@@ -212,7 +217,12 @@ export class ServicesService {
   /**
    * Delete service (soft delete)
    */
-  async delete(id: string): Promise<void> {
+  async delete(id: string, businessId: string): Promise<void> {
+    const owned = await prisma.service.findFirst({ where: { id, businessId } });
+    if (!owned) {
+      throw new AppError('Serviço não encontrado', 404);
+    }
+
     await prisma.service.update({
       where: { id },
       data: { isActive: false },
@@ -224,10 +234,11 @@ export class ServicesService {
   /**
    * Get services by professional
    */
-  async getByProfessional(professionalId: string): Promise<any[]> {
+  async getByProfessional(professionalId: string, businessId: string): Promise<any[]> {
     const services = await prisma.service.findMany({
       where: {
         isActive: true,
+        businessId,
         professionals: {
           some: {
             professionalId,

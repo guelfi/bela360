@@ -169,6 +169,10 @@ export class WhatsAppController {
     try {
       const { businessId } = req.params;
 
+      if (businessId !== req.user!.businessId) {
+        throw new AppError('WhatsApp not configured for this business', 404);
+      }
+
       const business = await prisma.business.findUnique({
         where: { id: businessId },
       });
@@ -200,6 +204,10 @@ export class WhatsAppController {
     try {
       const { businessId } = req.params;
 
+      if (businessId !== req.user!.businessId) {
+        throw new AppError('WhatsApp not configured for this business', 404);
+      }
+
       const business = await prisma.business.findUnique({
         where: { id: businessId },
       });
@@ -226,6 +234,10 @@ export class WhatsAppController {
   async sendMessage(req: Request, res: Response, next: NextFunction) {
     try {
       const { businessId, phone, message } = sendMessageSchema.parse(req.body);
+
+      if (businessId !== req.user!.businessId) {
+        throw new AppError('WhatsApp not configured for this business', 404);
+      }
 
       const business = await prisma.business.findUnique({
         where: { id: businessId },
@@ -270,6 +282,10 @@ export class WhatsAppController {
   async disconnect(req: Request, res: Response, next: NextFunction) {
     try {
       const { businessId } = req.params;
+
+      if (businessId !== req.user!.businessId) {
+        throw new AppError('WhatsApp not configured for this business', 404);
+      }
 
       const business = await prisma.business.findUnique({
         where: { id: businessId },
