@@ -94,7 +94,7 @@ export default function OnboardingPage() {
     >
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/85 to-pink-700/80" />
 
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-3xl relative z-10">
         <Link
           href="/"
           className="inline-flex items-center gap-1 text-purple-100 hover:text-white text-sm font-medium mb-6"
@@ -113,109 +113,111 @@ export default function OnboardingPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Dados do negocio</h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Dados do proprietario</h2>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nome do negocio</label>
-                <input
-                  type="text"
-                  value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder="Salao da Ana"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  minLength={2}
-                  maxLength={100}
-                  required
-                />
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Seu nome</label>
+                  <input
+                    type="text"
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder="Ana Silva"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    minLength={2}
+                    maxLength={100}
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seu telefone (usado pra entrar no sistema)
+                  </label>
+                  <input
+                    type="tel"
+                    value={ownerPhone}
+                    onChange={(e) => setOwnerPhone(formatPhone(e.target.value))}
+                    placeholder="(11) 98888-8888"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    maxLength={15}
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seu e-mail (opcional)
+                  </label>
+                  <input
+                    type="email"
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="ana@exemplo.com"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Telefone do negocio</label>
-                <input
-                  type="tel"
-                  value={businessPhone}
-                  onChange={(e) => setBusinessPhone(formatPhone(e.target.value))}
-                  placeholder="(11) 99999-9999"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  maxLength={15}
-                  required
-                />
-              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Dados do negocio</h2>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  E-mail do negocio (opcional)
-                </label>
-                <input
-                  type="email"
-                  value={businessEmail}
-                  onChange={(e) => setBusinessEmail(e.target.value)}
-                  placeholder="contato@salaodaana.com.br"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome do negocio</label>
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Salao da Ana"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    minLength={2}
+                    maxLength={100}
+                    required
+                  />
+                </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de negocio</label>
-                <select
-                  value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value as typeof businessType)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  {BUSINESS_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Telefone do negocio</label>
+                  <input
+                    type="tel"
+                    value={businessPhone}
+                    onChange={(e) => setBusinessPhone(formatPhone(e.target.value))}
+                    placeholder="(11) 99999-9999"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    maxLength={15}
+                    required
+                  />
+                </div>
 
-            <div className="pt-2 border-t border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 pt-4">Dados do proprietario</h2>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    E-mail do negocio (opcional)
+                  </label>
+                  <input
+                    type="email"
+                    value={businessEmail}
+                    onChange={(e) => setBusinessEmail(e.target.value)}
+                    placeholder="contato@salaodaana.com.br"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Seu nome</label>
-                <input
-                  type="text"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="Ana Silva"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  minLength={2}
-                  maxLength={100}
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seu telefone (usado pra entrar no sistema)
-                </label>
-                <input
-                  type="tel"
-                  value={ownerPhone}
-                  onChange={(e) => setOwnerPhone(formatPhone(e.target.value))}
-                  placeholder="(11) 98888-8888"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  maxLength={15}
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Seu e-mail (opcional)
-                </label>
-                <input
-                  type="email"
-                  value={ownerEmail}
-                  onChange={(e) => setOwnerEmail(e.target.value)}
-                  placeholder="ana@exemplo.com"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de negocio</label>
+                  <select
+                    value={businessType}
+                    onChange={(e) => setBusinessType(e.target.value as typeof businessType)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    {BUSINESS_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
