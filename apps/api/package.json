@@ -11,7 +11,8 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "clean": "rm -rf dist",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@bela360/shared": "workspace:*",
