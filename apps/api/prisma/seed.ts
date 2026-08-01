@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -40,7 +41,7 @@ async function main() {
       name: 'Camila Fernandes',
       phone: '11988880001',
       email: 'camila@salaobeladodemo.com.br',
-      role: 'OWNER',
+      role: 'PROPRIETARIO',
     },
   });
 
@@ -52,7 +53,7 @@ async function main() {
       name: 'Patricia Gomes',
       phone: '11988880002',
       email: 'patricia@salaobeladodemo.com.br',
-      role: 'ADMIN',
+      role: 'ADMINISTRADOR',
     },
   });
 
@@ -64,7 +65,7 @@ async function main() {
       name: 'Juliana Ramos',
       phone: '11988880003',
       email: 'juliana@salaobeladodemo.com.br',
-      role: 'PROFESSIONAL',
+      role: 'PROFISSIONAL',
       color: '#a855f7',
       commission: 30,
     },
@@ -78,7 +79,7 @@ async function main() {
       name: 'Marcos Vieira',
       phone: '11988880004',
       email: 'marcos@salaobeladodemo.com.br',
-      role: 'PROFESSIONAL',
+      role: 'PROFISSIONAL',
       color: '#ec4899',
       commission: 25,
     },
@@ -92,7 +93,7 @@ async function main() {
       name: 'Beatriz Lima',
       phone: '11988880005',
       email: 'beatriz@salaobeladodemo.com.br',
-      role: 'RECEPTIONIST',
+      role: 'RECEPCIONISTA',
     },
   });
 
@@ -963,16 +964,193 @@ async function main() {
 
   console.log('Seed completed successfully!');
   console.log('');
-  console.log('Login (apenas telefone + OTP - sem senha):');
-  console.log('  OWNER         11988880001 (Camila Fernandes)');
-  console.log('  ADMIN         11988880002 (Patricia Gomes)');
-  console.log('  PROFESSIONAL  11988880003 (Juliana Ramos)');
-  console.log('  PROFESSIONAL  11988880004 (Marcos Vieira)');
-  console.log('  RECEPTIONIST  11988880005 (Beatriz Lima)');
+  console.log('Tenant demo (apenas telefone + OTP - sem senha):');
+  console.log('  PROPRIETARIO   11988880001 (Camila Fernandes)');
+  console.log('  ADMINISTRADOR  11988880002 (Patricia Gomes)');
+  console.log('  PROFISSIONAL   11988880003 (Juliana Ramos)');
+  console.log('  PROFISSIONAL   11988880004 (Marcos Vieira)');
+  console.log('  RECEPCIONISTA  11988880005 (Beatriz Lima)');
   console.log('  O codigo OTP fica salvo no Redis em otp:<telefone> mesmo se o WhatsApp nao entregar.');
 }
 
-main()
+// ===========================================
+// ADMINISTRADOR DA PLATAFORMA (cross-tenant)
+// ===========================================
+
+async function seedPlatformAdmin() {
+  const passwordHash = await bcrypt.hash('PlatformAdmin@2026!', 10);
+
+  await prisma.platformAdmin.upsert({
+    where: { email: 'admin@plataforma.bela360.com.br' },
+    update: { passwordHash },
+    create: {
+      name: 'Admin Plataforma',
+      email: 'admin@plataforma.bela360.com.br',
+      passwordHash,
+    },
+  });
+
+  console.log('Platform admin created: admin@plataforma.bela360.com.br (senha: PlatformAdmin@2026!)');
+}
+
+// ===========================================
+// TENANTS ADICIONAIS (multi-tenant, isolamento)
+// ===========================================
+
+interface ExtraTenantConfig {
+  slug: string;
+  name: string;
+  phone: string;
+  email: string;
+  type: 'SALON' | 'BARBERSHOP' | 'AESTHETICS' | 'SPA';
+  city: string;
+  state: string;
+  ownerName: string;
+  ownerPhone: string;
+  serviceName: string;
+  servicePrice: number;
+  clientName: string;
+  clientPhone: string;
+}
+
+async function seedExtraTenant(config: ExtraTenantConfig) {
+  const business = await prisma.business.upsert({
+    where: { slug: config.slug },
+    update: {},
+    create: {
+      name: config.name,
+      slug: config.slug,
+      phone: config.phone,
+      email: config.email,
+      type: config.type,
+      status: 'ACTIVE',
+      city: config.city,
+      state: config.state,
+    },
+  });
+
+  const owner = await prisma.user.upsert({
+    where: { businessId_phone: { businessId: business.id, phone: config.ownerPhone } },
+    update: {},
+    create: {
+      businessId: business.id,
+      name: config.ownerName,
+      phone: config.ownerPhone,
+      role: 'PROPRIETARIO',
+    },
+  });
+
+  const service = await prisma.service.upsert({
+    where: { id: `service-${config.slug}` },
+    update: {},
+    create: {
+      id: `service-${config.slug}`,
+      businessId: business.id,
+      name: config.serviceName,
+      duration: 45,
+      price: config.servicePrice,
+    },
+  });
+
+  const client = await prisma.client.upsert({
+    where: { businessId_phone: { businessId: business.id, phone: config.clientPhone } },
+    update: {},
+    create: {
+      businessId: business.id,
+      name: config.clientName,
+      phone: config.clientPhone,
+    },
+  });
+
+  const startTime = new Date();
+  startTime.setDate(startTime.getDate() + 2);
+  startTime.setHours(10, 0, 0, 0);
+  const endTime = new Date(startTime);
+  endTime.setMinutes(endTime.getMinutes() + 45);
+
+  await prisma.appointment.upsert({
+    where: { id: `appt-${config.slug}` },
+    update: {},
+    create: {
+      id: `appt-${config.slug}`,
+      businessId: business.id,
+      clientId: client.id,
+      professionalId: owner.id,
+      serviceId: service.id,
+      startTime,
+      endTime,
+      status: 'PENDING',
+    },
+  });
+
+  console.log(`Tenant "${config.name}" criado (slug: ${config.slug}, owner: ${config.ownerPhone})`);
+}
+
+async function seedExtraTenants() {
+  await seedExtraTenant({
+    slug: 'barbearia-vintage',
+    name: 'Barbearia Vintage',
+    phone: '11966660001',
+    email: 'contato@barbeariavintage.com.br',
+    type: 'BARBERSHOP',
+    city: 'Sao Paulo',
+    state: 'SP',
+    ownerName: 'Diego Martins',
+    ownerPhone: '11966660002',
+    serviceName: 'Corte + Barba',
+    servicePrice: 70,
+    clientName: 'Lucas Ferreira',
+    clientPhone: '11966660003',
+  });
+
+  await seedExtraTenant({
+    slug: 'studio-unhas-cia',
+    name: 'Studio Unhas & Cia',
+    phone: '11977760001',
+    email: 'contato@studiounhasecia.com.br',
+    type: 'AESTHETICS',
+    city: 'Rio de Janeiro',
+    state: 'RJ',
+    ownerName: 'Larissa Nunes',
+    ownerPhone: '11977760002',
+    serviceName: 'Alongamento em Gel',
+    servicePrice: 90,
+    clientName: 'Patricia Souza',
+    clientPhone: '11977760003',
+  });
+
+  await seedExtraTenant({
+    slug: 'espaco-bella-hair',
+    name: 'Espaco Bella Hair',
+    phone: '11988860001',
+    email: 'contato@espacobellahair.com.br',
+    type: 'SPA',
+    city: 'Belo Horizonte',
+    state: 'MG',
+    ownerName: 'Renata Castro',
+    ownerPhone: '11988860002',
+    serviceName: 'Hidratacao Profunda',
+    servicePrice: 110,
+    clientName: 'Amanda Torres',
+    clientPhone: '11988860003',
+  });
+}
+
+async function runAll() {
+  await seedPlatformAdmin();
+  await main();
+  await seedExtraTenants();
+
+  console.log('');
+  console.log('=== RESUMO FINAL ===');
+  console.log('Admin de Plataforma: admin@plataforma.bela360.com.br / PlatformAdmin@2026!');
+  console.log('Tenant demo: salao-bela-demo (OTP, telefones acima)');
+  console.log('Tenant 2: barbearia-vintage (owner OTP: 11966660002)');
+  console.log('Tenant 3: studio-unhas-cia (owner OTP: 11977760002)');
+  console.log('Tenant 4: espaco-bella-hair (owner OTP: 11988860002)');
+}
+
+runAll()
   .catch((e) => {
     console.error(e);
     process.exit(1);
