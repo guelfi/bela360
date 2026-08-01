@@ -5,7 +5,7 @@ const PUBLIC_PATHS = new Set(['/', '/login', '/profissional']);
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/onboarding')) {
+  if (PUBLIC_PATHS.has(pathname) || pathname.startsWith('/onboarding') || pathname.startsWith('/admin')) {
     return NextResponse.next();
   }
 

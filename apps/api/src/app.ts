@@ -20,6 +20,7 @@ import { marketingRoutes } from './modules/marketing';
 import { loyaltyRoutes } from './modules/loyalty';
 import { inventoryRoutes } from './modules/inventory';
 import { professionalRoutes } from './modules/professional';
+import { adminAuthRoutes, adminBusinessesRoutes, adminAuthMiddleware } from './modules/admin';
 import { authMiddleware } from './common/middleware/auth.middleware';
 
 // Create Express app
@@ -144,6 +145,8 @@ app.use('/api/marketing', authMiddleware, marketingRoutes);
 app.use('/api/loyalty', authMiddleware, loyaltyRoutes);
 app.use('/api/inventory', authMiddleware, inventoryRoutes);
 app.use('/api/professional', authMiddleware, professionalRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/admin/businesses', adminAuthMiddleware, adminBusinessesRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

@@ -17,6 +17,11 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
+  // JWT do admin de plataforma (cross-tenant) - secret dedicado, nunca
+  // reaproveita o JWT_SECRET de tenant.
+  PLATFORM_ADMIN_JWT_SECRET: z.string().min(32),
+  PLATFORM_ADMIN_JWT_REFRESH_SECRET: z.string().min(32),
+
   // Evolution API
   EVOLUTION_API_URL: z.string().url().default('http://localhost:8080'),
   EVOLUTION_API_KEY: z.string(),

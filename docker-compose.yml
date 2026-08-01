@@ -97,6 +97,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-super_secret_refresh_key_change_in_production}
+      - PLATFORM_ADMIN_JWT_SECRET=${PLATFORM_ADMIN_JWT_SECRET:-h8cpBc88qIpJNzJED1nbd0BWv1Zed4lL8Gim8Y2aDkU=}
+      - PLATFORM_ADMIN_JWT_REFRESH_SECRET=${PLATFORM_ADMIN_JWT_REFRESH_SECRET:-fBbAnxGuyCMDPphdY4+2WrmyuFQockz8+6zvo8PTCB8=}
       - EVOLUTION_API_URL=http://evolution-api:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-bela360_evolution_key}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-bela360}
