@@ -69,6 +69,7 @@ const NAV_LINKS = [
   { label: 'Inicio', href: '#hero' },
   { label: 'Recursos', href: '#recursos' },
   { label: 'Como Usar', href: '#como-usar' },
+  { label: 'Produtividade', href: '#produtividade' },
   { label: 'Contato', href: '#footer' },
 ];
 
@@ -226,7 +227,7 @@ export default function LandingPage() {
       </section>
 
       {/* Secondary showcase */}
-      <section className="bg-gray-50">
+      <section id="produtividade" className="bg-gray-50 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
           <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
             <img
