@@ -64,16 +64,36 @@ const STEPS = [
   },
 ];
 
+const NAV_LINKS = [
+  { label: 'Inicio', href: '#hero' },
+  { label: 'Recursos', href: '#recursos' },
+  { label: 'Como Usar', href: '#como-usar' },
+  { label: 'Contato', href: '#footer' },
+];
+
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-white">
-      {/* Nav */}
-      <header className="border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+      {/* Nav fixo */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-6">
+          <a href="#hero" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent shrink-0">
             bela360
-          </span>
-          <div className="flex items-center gap-3">
+          </a>
+
+          <nav className="hidden md:flex items-center gap-6">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-gray-600 hover:text-purple-600 font-medium text-sm transition-colors"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/login"
               className="text-gray-600 hover:text-purple-600 font-medium text-sm"
@@ -91,7 +111,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50">
+      <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 pt-16 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
@@ -134,7 +154,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
+      <section id="recursos" className="max-w-6xl mx-auto px-4 py-20 scroll-mt-16">
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold text-gray-900 mb-3">
             Tudo que o seu negocio precisa, em um so lugar
@@ -186,7 +206,7 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="max-w-6xl mx-auto px-4 py-20">
+      <section id="como-usar" className="max-w-6xl mx-auto px-4 py-20 scroll-mt-16">
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold text-gray-900 mb-3">Comece em 3 passos</h2>
           <p className="text-gray-600">Do cadastro ao primeiro agendamento, sem complicacao.</p>
@@ -252,7 +272,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100">
+      <footer id="footer" className="border-t border-gray-100 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
             bela360
