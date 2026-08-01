@@ -88,7 +88,7 @@ export const messageWorker = new Worker<ProcessMessageJob>(
         where: { id: businessId },
         include: {
           services: { where: { isActive: true } },
-          users: { where: { role: 'PROFESSIONAL', isActive: true } },
+          users: { where: { role: 'PROFISSIONAL', isActive: true } },
         },
       });
 

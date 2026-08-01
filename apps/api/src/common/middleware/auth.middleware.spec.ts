@@ -24,28 +24,28 @@ describe('authMiddleware', () => {
   });
 
   it('populates req.user from a valid cookie token', () => {
-    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'OWNER' });
+    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'PROPRIETARIO' });
     const req = buildReq({ cookies: { accessToken: token } });
 
     authMiddleware(req, {} as Response, next);
 
-    expect(req.user).toEqual({ userId: 'user-1', businessId: 'biz-1', role: 'OWNER' });
+    expect(req.user).toEqual({ userId: 'user-1', businessId: 'biz-1', role: 'PROPRIETARIO' });
     expect(next).toHaveBeenCalledWith();
   });
 
   it('falls back to the Authorization header when there is no cookie', () => {
-    const token = buildToken({ userId: 'user-2', businessId: 'biz-2', role: 'PROFESSIONAL' });
+    const token = buildToken({ userId: 'user-2', businessId: 'biz-2', role: 'PROFISSIONAL' });
     const req = buildReq({ headers: { authorization: `Bearer ${token}` } });
 
     authMiddleware(req, {} as Response, next);
 
-    expect(req.user).toEqual({ userId: 'user-2', businessId: 'biz-2', role: 'PROFESSIONAL' });
+    expect(req.user).toEqual({ userId: 'user-2', businessId: 'biz-2', role: 'PROFISSIONAL' });
     expect(next).toHaveBeenCalledWith();
   });
 
   it('prefers the cookie over the Authorization header when both are present', () => {
-    const cookieToken = buildToken({ userId: 'cookie-user', businessId: 'biz-1', role: 'OWNER' });
-    const headerToken = buildToken({ userId: 'header-user', businessId: 'biz-1', role: 'OWNER' });
+    const cookieToken = buildToken({ userId: 'cookie-user', businessId: 'biz-1', role: 'PROPRIETARIO' });
+    const headerToken = buildToken({ userId: 'header-user', businessId: 'biz-1', role: 'PROPRIETARIO' });
     const req = buildReq({
       cookies: { accessToken: cookieToken },
       headers: { authorization: `Bearer ${headerToken}` },
@@ -77,7 +77,7 @@ describe('authMiddleware', () => {
   });
 
   it('calls next with AuthenticationError when the token signature is invalid', () => {
-    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'OWNER' }, 'a-completely-different-secret-key-value');
+    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'PROPRIETARIO' }, 'a-completely-different-secret-key-value');
     const req = buildReq({ cookies: { accessToken: token } });
 
     authMiddleware(req, {} as Response, next);
@@ -87,7 +87,7 @@ describe('authMiddleware', () => {
   });
 
   it('calls next with AuthenticationError when the token is expired', () => {
-    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'OWNER' }, env.JWT_SECRET, -10);
+    const token = buildToken({ userId: 'user-1', businessId: 'biz-1', role: 'PROPRIETARIO' }, env.JWT_SECRET, -10);
     const req = buildReq({ cookies: { accessToken: token } });
 
     authMiddleware(req, {} as Response, next);

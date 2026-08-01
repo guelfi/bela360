@@ -64,7 +64,7 @@ export class AppointmentsController {
 
       // PROFESSIONAL só enxerga a própria agenda - ignora qualquer
       // professionalId vindo da query e forca o proprio id.
-      if (req.user!.role === 'PROFESSIONAL') {
+      if (req.user!.role === 'PROFISSIONAL') {
         filters.professionalId = req.user!.userId;
       }
 
@@ -108,7 +108,7 @@ export class AppointmentsController {
    * pra não revelar que o agendamento existe em outra agenda.
    */
   private assertProfessionalOwnership(req: Request, professionalId: string): void {
-    if (req.user!.role === 'PROFESSIONAL' && professionalId !== req.user!.userId) {
+    if (req.user!.role === 'PROFISSIONAL' && professionalId !== req.user!.userId) {
       throw new NotFoundError('Agendamento');
     }
   }
@@ -119,7 +119,7 @@ export class AppointmentsController {
    * Só faz a query extra quando o papel é PROFESSIONAL.
    */
   private async assertProfessionalOwnershipById(req: Request, id: string): Promise<void> {
-    if (req.user!.role !== 'PROFESSIONAL') return;
+    if (req.user!.role !== 'PROFISSIONAL') return;
     const appointment = await appointmentsService.getById(id, req.user!.businessId);
     this.assertProfessionalOwnership(req, appointment.professionalId);
   }
@@ -256,7 +256,7 @@ export class AppointmentsController {
         {
           startDate: today,
           endDate: tomorrow,
-          professionalId: req.user!.role === 'PROFESSIONAL' ? req.user!.userId : undefined,
+          professionalId: req.user!.role === 'PROFISSIONAL' ? req.user!.userId : undefined,
         },
         1,
         100

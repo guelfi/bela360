@@ -3,7 +3,7 @@ import { prisma } from '../../config';
 import { requireRole } from '../../common/middleware/rbac.middleware';
 
 const router: Router = Router();
-const businessManager = requireRole('OWNER', 'ADMIN');
+const businessManager = requireRole('PROPRIETARIO', 'ADMINISTRADOR');
 
 // Get professional profile
 router.get('/profile', async (req: Request, res: Response) => {
@@ -332,7 +332,7 @@ router.post('/ranking/calculate', async (req: Request, res: Response) => {
     const endOfMonth = new Date(year, month, 0);
 
     const professionals = await prisma.user.findMany({
-      where: { businessId, role: 'PROFESSIONAL', isActive: true },
+      where: { businessId, role: 'PROFISSIONAL', isActive: true },
     });
 
     const rankingData = await Promise.all(

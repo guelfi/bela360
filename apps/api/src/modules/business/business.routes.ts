@@ -7,7 +7,7 @@ const router: Router = Router();
 // Configurações do negócio e gestão de profissionais: só OWNER/ADMIN.
 // As rotas GET ficam abertas pra todo mundo autenticado (Agenda/Serviços
 // precisam listar profissionais e horários de funcionamento).
-const businessManager = requireRole('OWNER', 'ADMIN');
+const businessManager = requireRole('PROPRIETARIO', 'ADMINISTRADOR');
 
 // Business routes
 router.get('/', (req, res, next) => businessController.getCurrent(req, res, next));

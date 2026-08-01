@@ -6,7 +6,7 @@ const router: Router = Router();
 
 // Financeiro geral: só OWNER/ADMIN (PROFESSIONAL e RECEPTIONIST não tem
 // acesso, exceto as rotas /my/* logo abaixo, que são auto-escopadas).
-const financeManager = requireRole('OWNER', 'ADMIN');
+const financeManager = requireRole('PROPRIETARIO', 'ADMINISTRADOR');
 
 // Financial report
 router.get('/report', financeManager, (req, res, next) => financeController.getFinancialReport(req, res, next));

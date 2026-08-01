@@ -30,10 +30,10 @@ enum BusinessStatus {
 }
 
 enum UserRole {
-  OWNER
-  ADMIN
-  PROFESSIONAL
-  RECEPTIONIST
+  PROPRIETARIO
+  ADMINISTRADOR
+  PROFISSIONAL
+  RECEPCIONISTA
 }
 
 enum AppointmentStatus {
@@ -138,7 +138,7 @@ model User {
   name         String
   phone        String
   email        String?
-  role         UserRole  @default(PROFESSIONAL)
+  role         UserRole  @default(PROFISSIONAL)
   isActive     Boolean   @default(true)
 
   // Authentication

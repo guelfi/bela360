@@ -43,7 +43,7 @@ export default function ProfessionalLoginPage() {
     try {
       const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
 
-      if (data.user.role !== 'PROFESSIONAL') {
+      if (data.user.role !== 'PROFISSIONAL') {
         // Cookie ja foi setado pela API para esse usuario, mas ele nao e
         // profissional - desfaz a sessao antes de recusar o acesso.
         await authApi.logout();

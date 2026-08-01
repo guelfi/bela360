@@ -45,7 +45,7 @@ export class MarketingSuggestionsService {
     const professionals = await prisma.user.findMany({
       where: {
         businessId,
-        role: 'PROFESSIONAL',
+        role: 'PROFISSIONAL',
         isActive: true,
       },
       select: { id: true, name: true },

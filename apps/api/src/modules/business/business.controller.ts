@@ -33,7 +33,7 @@ const createProfessionalSchema = z.object({
   name: z.string().min(2).max(100),
   phone: z.string().min(10).max(15),
   email: z.string().email().optional(),
-  role: z.enum(['PROFESSIONAL', 'ADMIN', 'RECEPTIONIST']).optional(),
+  role: z.enum(['PROFISSIONAL', 'ADMINISTRADOR', 'RECEPCIONISTA']).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   commission: z.number().min(0).max(100).optional(),
 });

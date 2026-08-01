@@ -103,7 +103,7 @@ export class BusinessService {
             name: data.ownerName,
             phone: data.ownerPhone.replace(/\D/g, ''),
             email: data.ownerEmail,
-            role: 'OWNER',
+            role: 'PROPRIETARIO',
             isActive: true,
           },
         },
@@ -268,7 +268,7 @@ export class BusinessService {
         name: data.name,
         phone: data.phone.replace(/\D/g, ''),
         email: data.email,
-        role: data.role || 'PROFESSIONAL',
+        role: data.role || 'PROFISSIONAL',
         color: data.color || this.generateColor(),
         commission: data.commission !== undefined ? String(data.commission) : undefined,
         isActive: true,
@@ -357,7 +357,7 @@ export class BusinessService {
       where: {
         businessId,
         isActive: true,
-        role: { in: ['PROFESSIONAL', 'ADMIN', 'OWNER'] },
+        role: { in: ['PROFISSIONAL', 'ADMINISTRADOR', 'PROPRIETARIO'] },
       },
       include: {
         services: {

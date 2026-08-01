@@ -201,7 +201,7 @@ export interface User {
   name: string;
   phone: string;
   email?: string;
-  role: 'OWNER' | 'ADMIN' | 'PROFESSIONAL' | 'RECEPTIONIST';
+  role: 'PROPRIETARIO' | 'ADMINISTRADOR' | 'PROFISSIONAL' | 'RECEPCIONISTA';
   isActive: boolean;
   lastLoginAt?: string;
 }
@@ -894,7 +894,7 @@ export interface Professional {
   name: string;
   phone: string;
   email?: string;
-  role: 'PROFESSIONAL' | 'ADMIN' | 'OWNER' | 'RECEPTIONIST';
+  role: 'PROFISSIONAL' | 'ADMINISTRADOR' | 'PROPRIETARIO' | 'RECEPCIONISTA';
   color?: string;
   commission?: number;
   isActive: boolean;

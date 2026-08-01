@@ -47,7 +47,7 @@ export default function LoginPage() {
       const data = await authApi.verifyOTP(phone.replace(/\D/g, ''), otp);
 
       // Redirect based on role (o token ja foi setado como cookie httpOnly pela API)
-      if (data.user.role === 'PROFESSIONAL') {
+      if (data.user.role === 'PROFISSIONAL') {
         router.push('/profissional/meu-painel');
       } else {
         router.push('/dashboard');

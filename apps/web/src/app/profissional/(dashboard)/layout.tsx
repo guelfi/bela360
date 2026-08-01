@@ -50,7 +50,7 @@ export default function ProfessionalLayout({
     authApi
       .me()
       .then((data) => {
-        if (data.user.role !== 'PROFESSIONAL') {
+        if (data.user.role !== 'PROFISSIONAL') {
           throw new Error('not a professional');
         }
         setUser(data);
