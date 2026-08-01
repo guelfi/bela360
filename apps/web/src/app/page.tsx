@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Instagram, Facebook, Mail, Phone, MapPin } from 'lucide-react';
 
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1695527081848-1e46c06e6458?auto=format&fit=crop&w=1200&q=80';
@@ -77,7 +78,7 @@ export default function LandingPage() {
       {/* Nav fixo */}
       <header className="fixed top-0 inset-x-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-6">
-          <a href="#hero" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent shrink-0">
+          <a href="#hero" className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent shrink-0">
             bela360
           </a>
 
@@ -86,7 +87,7 @@ export default function LandingPage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-gray-600 hover:text-purple-600 font-medium text-sm transition-colors"
+                className="text-gray-600 hover:text-primary font-medium text-sm transition-colors"
               >
                 {link.label}
               </a>
@@ -96,13 +97,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/login"
-              className="text-gray-600 hover:text-purple-600 font-medium text-sm"
+              className="text-gray-600 hover:text-primary font-medium text-sm"
             >
               Entrar
             </Link>
             <Link
               href="/onboarding"
-              className="bg-purple-600 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-purple-700 transition-colors"
+              className="bg-primary text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
             >
               Cadastre seu negocio
             </Link>
@@ -111,13 +112,13 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-pink-50 pt-16 scroll-mt-16">
+      <section id="hero" className="relative overflow-hidden bg-gradient-to-br from-primary/5 to-secondary/5 pt-16 scroll-mt-16">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
               Sua agenda cheia.
               <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Sua cabeca livre.
               </span>
             </h1>
@@ -129,13 +130,13 @@ export default function LandingPage() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/onboarding"
-                className="bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200"
+                className="bg-primary text-white px-8 py-4 rounded-lg font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
               >
                 Cadastre seu negocio gratis
               </Link>
               <Link
                 href="/login"
-                className="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold border border-purple-200 hover:bg-purple-50 transition-colors"
+                className="bg-white text-primary px-8 py-4 rounded-lg font-semibold border border-primary/20 hover:bg-primary/5 transition-colors"
               >
                 Ja tenho conta
               </Link>
@@ -168,11 +169,11 @@ export default function LandingPage() {
           {FEATURES.map((feature) => (
             <div
               key={feature.title}
-              className="p-6 rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all"
+              className="p-6 rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-lg transition-all"
             >
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center mb-4">
                 <svg
-                  className="w-6 h-6 text-purple-600"
+                  className="w-6 h-6 text-primary"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -187,15 +188,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Image break */}
-      <section className="relative">
+      {/* Como Usar (banner de imagem + 3 passos, uma so secao) */}
+      <section id="como-usar" className="scroll-mt-16">
         <div className="h-64 md:h-96 relative overflow-hidden">
           <img
             src={FEATURE_IMAGE_2}
             alt="Interior de salao de beleza organizado"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/70 to-pink-800/50 flex items-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/70 to-secondary/50 flex items-center">
             <div className="max-w-6xl mx-auto px-4 w-full">
               <p className="text-white text-2xl md:text-3xl font-semibold max-w-lg">
                 Feito pro ritmo de quem vive de agenda cheia e cliente satisfeita.
@@ -203,25 +204,24 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* How it works */}
-      <section id="como-usar" className="max-w-6xl mx-auto px-4 py-20 scroll-mt-16">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">Comece em 3 passos</h2>
-          <p className="text-gray-600">Do cadastro ao primeiro agendamento, sem complicacao.</p>
-        </div>
+        <div className="max-w-6xl mx-auto px-4 py-20">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">Comece em 3 passos</h2>
+            <p className="text-gray-600">Do cadastro ao primeiro agendamento, sem complicacao.</p>
+          </div>
 
-        <div className="grid md:grid-cols-3 gap-10">
-          {STEPS.map((step) => (
-            <div key={step.number} className="text-center">
-              <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-purple-600 to-pink-500 text-white text-xl font-bold flex items-center justify-center mb-5">
-                {step.number}
+          <div className="grid md:grid-cols-3 gap-10">
+            {STEPS.map((step) => (
+              <div key={step.number} className="text-center">
+                <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-primary to-secondary text-white text-xl font-bold flex items-center justify-center mb-5">
+                  {step.number}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
+                <p className="text-gray-600 text-sm">{step.description}</p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{step.title}</h3>
-              <p className="text-gray-600 text-sm">{step.description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -245,7 +245,7 @@ export default function LandingPage() {
             </p>
             <Link
               href="/onboarding"
-              className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
             >
               Quero organizar meu salao
             </Link>
@@ -254,17 +254,17 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="bg-gradient-to-br from-purple-600 to-pink-500">
+      <section className="bg-gradient-to-br from-primary to-secondary">
         <div className="max-w-4xl mx-auto px-4 py-20 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Pronta pra parar de administrar no caderno?
           </h2>
-          <p className="text-purple-100 text-lg mb-8 max-w-xl mx-auto">
+          <p className="text-white/90 text-lg mb-8 max-w-xl mx-auto">
             Cadastre seu negocio agora e comece a usar o bela360 hoje mesmo.
           </p>
           <Link
             href="/onboarding"
-            className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold hover:bg-purple-50 transition-colors shadow-lg"
+            className="inline-block bg-white text-primary px-8 py-4 rounded-lg font-semibold hover:bg-white/90 transition-colors shadow-lg"
           >
             Cadastre seu negocio gratis
           </Link>
@@ -272,14 +272,79 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer id="footer" className="border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
-            bela360
-          </span>
-          <p className="text-gray-500 text-sm">
-            Automacao para negocios de beleza.
-          </p>
+      <footer id="footer" className="bg-gray-900 text-white py-16 scroll-mt-16">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            {/* Marca */}
+            <div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                bela360
+              </span>
+              <p className="text-gray-400 mt-4 mb-6">
+                Automacao para negocios de beleza.
+              </p>
+              {/* TODO: trocar pelos links reais das redes sociais do bela360 */}
+              <div className="flex gap-4">
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                  <Facebook className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Produto */}
+            <div>
+              <h4 className="font-semibold mb-4">Produto</h4>
+              <ul className="space-y-3 text-gray-400">
+                <li><a href="#recursos" className="hover:text-white transition-colors">Recursos</a></li>
+                <li><a href="#como-usar" className="hover:text-white transition-colors">Como Usar</a></li>
+                <li><Link href="/onboarding" className="hover:text-white transition-colors">Cadastre seu negocio</Link></li>
+              </ul>
+            </div>
+
+            {/* Empresa */}
+            <div>
+              <h4 className="font-semibold mb-4">Empresa</h4>
+              <ul className="space-y-3 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Sobre</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Parceiros</a></li>
+              </ul>
+            </div>
+
+            {/* Contato */}
+            <div>
+              <h4 className="font-semibold mb-4">Contato</h4>
+              {/* TODO: trocar pelos dados reais de contato do bela360 */}
+              <ul className="space-y-3 text-gray-400">
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 shrink-0" />
+                  <span>contato@bela360.com.br</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 shrink-0" />
+                  <span>(11) 99999-9999</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span>Sao Paulo, Brasil</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-gray-400 text-sm">
+              2026 bela360. Todos os direitos reservados.
+            </p>
+            <div className="flex gap-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
+              <a href="#" className="hover:text-white transition-colors">Privacidade</a>
+              <a href="#" className="hover:text-white transition-colors">Cookies</a>
+            </div>
+          </div>
         </div>
       </footer>
     </main>
