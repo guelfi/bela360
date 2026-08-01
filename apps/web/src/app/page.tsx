@@ -156,7 +156,10 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="recursos" className="max-w-6xl mx-auto px-4 py-20 scroll-mt-16">
+      <section
+        id="recursos"
+        className="min-h-[calc(100vh-4rem)] flex flex-col justify-center max-w-6xl mx-auto px-4 py-20 scroll-mt-16"
+      >
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold text-gray-900 mb-3">
             Tudo que o seu negocio precisa, em um so lugar
@@ -227,9 +230,12 @@ export default function LandingPage() {
       </section>
 
       {/* Secondary showcase */}
-      <section id="produtividade" className="bg-gray-50 scroll-mt-16">
+      <section
+        id="produtividade"
+        className="min-h-[calc(100vh-4rem)] flex flex-col justify-center bg-gray-50 scroll-mt-16"
+      >
         <div className="max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
-          <div className="rounded-2xl overflow-hidden shadow-xl order-2 md:order-1">
+          <div className="rounded-2xl overflow-hidden shadow-xl aspect-[4/3] order-2 md:order-1">
             <img
               src={FEATURE_IMAGE_1}
               alt="Mesa de manicure organizada em salao de beleza"
