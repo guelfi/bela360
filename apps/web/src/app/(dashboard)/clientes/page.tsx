@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExportButton } from '@/components/ExportButton';
 import { exportData, ExportFormat, prepareClientExport } from '@/lib/export';
 import { clientsApi, Client, ClientDetails } from '@/lib/api';
+import { DateInput } from '@/components/DateInput';
 
 const clientSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100),
@@ -51,6 +52,7 @@ export default function ClientesPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -287,10 +289,17 @@ export default function ClientesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento (opcional)</label>
-                <input
-                  type="date"
-                  {...register('birthDate')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                <Controller
+                  name="birthDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DateInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  )}
                 />
               </div>
               <div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
   clientsApi,
   Appointment,
 } from '@/lib/api';
+import { DateInput } from '@/components/DateInput';
 
 const timeSlots = [
   '08:00', '08:30', '09:00', '09:30', '10:00', '10:30',
@@ -74,6 +75,7 @@ export default function AgendaPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -171,10 +173,9 @@ export default function AgendaPage() {
           <p className="text-gray-600 capitalize">{formatDate(selectedDate)}</p>
         </div>
         <div className="flex items-center gap-4">
-          <input
-            type="date"
+          <DateInput
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={setSelectedDate}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
           <button
@@ -336,10 +337,17 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                  <input
-                    type="date"
-                    {...register('date')}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  <Controller
+                    name="date"
+                    control={control}
+                    render={({ field }) => (
+                      <DateInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                    )}
                   />
                 </div>
                 <div>
