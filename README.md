@@ -941,3 +941,8 @@ Este projeto esta sob a licenca MIT. Veja o arquivo [LICENSE](LICENSE) para mais
 **Desenvolvido para o mercado de beleza brasileiro**
 
 *Ultima atualizacao: Janeiro 2026*
+
+
+### Dominio publico na OCI
+
+Consulte [o guia de migracao do dominio](docs/domain-production.md) e os valores publicos em [`.env.oci.example`](.env.oci.example) antes de publicar o primeiro deploy com URLs na raiz.
