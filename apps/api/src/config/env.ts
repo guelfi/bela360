@@ -39,7 +39,7 @@ const envSchema = z.object({
   // cookie Secure sobre HTTP nunca e enviado de volta pelo navegador,
   // quebrando o login inteiro em producao. Ligar via env quando o dominio
   // tiver HTTPS.
-  COOKIE_SECURE: z.coerce.boolean().default(false),
+  COOKIE_SECURE: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
 
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

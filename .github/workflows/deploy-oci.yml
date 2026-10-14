@@ -82,11 +82,18 @@ jobs:
         env:
           OCI_HOST: ${{ secrets.OCI_HOST }}
           OCI_USER: ${{ secrets.OCI_USER }}
+          WEB_SMOKE_URL: ${{ vars.OCI_SMOKE_URL || 'https://bela360.com.br/' }}
+          API_SMOKE_URL: ${{ vars.OCI_API_SMOKE_URL || 'https://bela360.com.br/api/health' }}
         run: |
+          set -euo pipefail
           echo "Waiting for containers to stabilize..."
           sleep 20
           ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "sudo docker ps --filter name=bela360 --format 'table {{.Names}}\t{{.Status}}'"
           echo "=== Web health ==="
-          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "curl -s -o /dev/null -w 'HTTP %{http_code}\n' http://localhost/bela360/"
+          WEB_STATUS=$(curl --fail --silent --show-error --connect-timeout 10 --max-time 45 --retry 3 --retry-delay 5 --output /dev/null --write-out '%{http_code}' "$WEB_SMOKE_URL")
+          [ "$WEB_STATUS" = 200 ] || { echo "::error::Web retornou HTTP $WEB_STATUS; esperado 200 na URL canonica"; exit 1; }
+          echo "=== API health ==="
+          API_STATUS=$(curl --fail --silent --show-error --connect-timeout 10 --max-time 45 --retry 3 --retry-delay 5 --output /dev/null --write-out '%{http_code}' "$API_SMOKE_URL")
+          [ "$API_STATUS" = 200 ] || { echo "::error::API retornou HTTP $API_STATUS; esperado 200 na URL canonica"; exit 1; }
           echo "=== Deployed commit (server) ==="
           ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "cd /var/www/bela360 && git log -1 --oneline"
