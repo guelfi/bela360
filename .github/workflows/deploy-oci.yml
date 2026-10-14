@@ -19,6 +19,14 @@ concurrency:
 jobs:
   validate:
     name: Validate deploy inputs
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main')
+      }}
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch and confirmation
@@ -54,8 +62,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate
     environment: production
+    env:
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
+      - name: Validate immutable deployment revision
+        run: |
+          [[ "$DEPLOY_SHA" =~ ^[a-f0-9]{40}$ ]] || { echo '::error::Invalid deployment revision'; exit 1; }
+
+      - name: Checkout validated deployment revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -69,11 +88,17 @@ jobs:
           OCI_HOST: ${{ secrets.OCI_HOST }}
           OCI_USER: ${{ secrets.OCI_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} 'bash -s' << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${OCI_USER}@${OCI_HOST} "bash -s -- '$DEPLOY_SHA'" << 'EOF'
             set -e
+            DEPLOY_SHA=$1
             cd /var/www/bela360
-            git fetch origin
-            git reset --hard origin/main
+            git fetch origin main
+            git cat-file -e "$DEPLOY_SHA^{commit}"
+            if [[ $(git rev-parse origin/main) != "$DEPLOY_SHA" ]]; then
+              echo 'Deploy skipped: a newer main revision exists; wait for its approved CI.'
+              exit 1
+            fi
+            git reset --hard "$DEPLOY_SHA"
             sudo docker compose -f docker-compose.oci.yml up -d --build
             sudo docker network connect bela360_bela360-network nginx-proxy 2>/dev/null || true
           EOF
